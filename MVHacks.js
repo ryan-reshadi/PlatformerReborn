@@ -259,9 +259,6 @@ fires.push(new Fire(1000, 475));
 fires.push(new Fire(500, 550));
 fires.push(new Fire(600, 600));
 
-
-const targetScore = fires.length;
-
 for (const fire of fires) {
     objects.push(fire);
 }
@@ -271,6 +268,13 @@ for (const platform in platforms) {
 const BGImage = new Image(1400, 850);
 BGImage.src = 'forest.webp';
 
+
+// Ensure the title screen is displayed on page load
+window.onload = function () {
+    document.getElementById('titleScreen').style.display = 'flex';
+    canvas.style.display = 'none';
+    infoText.style.display = 'none';
+};
 
 function gameLoop() {
     ctx.clearRect(0, 0, 0, canvas.width, canvas.height);
@@ -393,3 +397,43 @@ document.addEventListener('keyup', (event) => {
 BGImage.onload = function () {
     gameLoop();
 };
+
+function startLevel(level) {
+    // Hide the title screen and show the game canvas
+    document.getElementById('titleScreen').style.display = 'none';
+    canvas.style.display = 'block';
+    infoText.style.display = 'block';
+
+    // Clear existing platforms and fires
+    platforms.length = 0;
+    fires.length = 0;
+
+    // Load level-specific platforms and fires
+    if (level === 1) {
+        platforms.push(new Platform(50, 200, 200, height, brown));
+        platforms.push(new Platform(250, 400, 75, height, brown));
+        fires.push(new Fire(100, 150));
+        fires.push(new Fire(200, 300));
+    } else if (level === 2) {
+        platforms.push(new Platform(100, 300, 150, height, brown));
+        platforms.push(new Platform(400, 500, 100, height, brown));
+        platforms.push(new Platform(700, 400, 200, height, brown));
+        fires.push(new Fire(150, 250));
+        fires.push(new Fire(450, 450));
+        fires.push(new Fire(750, 350));
+    } else if (level === 3) {
+        platforms.push(new Platform(50, 600, 300, height, brown));
+        platforms.push(new Platform(400, 500, 150, height, brown));
+        platforms.push(new Platform(700, 300, 100, height, brown));
+        fires.push(new Fire(60, 550));
+        fires.push(new Fire(450, 450));
+        fires.push(new Fire(750, 250));
+        fires.push(new Fire(800, 200));
+    }
+
+    // Update target score to match the number of fires
+    targetScore = fires.length; // Dynamically set targetScore here
+
+    // Start the game loop
+    gameLoop();
+}

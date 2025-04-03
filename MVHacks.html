@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,12 +7,19 @@
     <link rel="stylesheet" href="MVHacks.css">
 </head>
 <body>
-    <canvas id="myCanvas" width="1400" height="750" style="border:1px solid black;">
+    <div id="titleScreen">
+        <h1>Platformer Reborn</h1>
+        <p>Select a Level:</p>
+        <button onclick="startLevel(1)">Level 1</button>
+        <button onclick="startLevel(2)">Level 2</button>
+        <button onclick="startLevel(3)">Level 3</button>
+    </div>
+    <canvas id="myCanvas" width="1400" height="750" style="border:1px solid black; display: none;">
     </canvas>
     <main>
     </main> 
     <footer>
-        <p id="infoText">Score: , A - Move left, D - Move right, W - Jump, Space - Shoot water, 
+        <p id="infoText" style="display: none;">Score: , A - Move left, D - Move right, W - Jump, Space - Shoot water, 
             Arrow keys - Change direction of shooting water </p>
         <p id="controlText"></p>
         <p id="controlText2"></p>
