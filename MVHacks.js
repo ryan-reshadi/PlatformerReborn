@@ -50,16 +50,57 @@ const Player = {
         // Check collisions with platforms
         this.onGround = false;
         for (const platform of platforms) {
+            const isAbovePlatform = this.y + this.size <= platform.y;
+            const isBelowPlatform = this.y >= platform.y + platform.length;
+            const isLeftOfPlatform = this.x + this.size <= platform.x;
+            const isRightOfPlatform = this.x >= platform.x + platform.width;
+
+            // Check if hitting the platform from above
             if (
-                this.x < platform.x + platform.width &&
-                this.x + this.size > platform.x &&
-                this.y + this.size > platform.y &&
-                this.y + this.size <= platform.y + platform.length
+                !isBelowPlatform &&
+                !isLeftOfPlatform &&
+                !isRightOfPlatform &&
+                this.velocityY >= 0 && // Ensure the player is moving downward or stationary
+                this.y + this.size > platform.y && // Ensure the player is overlapping the platform
+                this.y < platform.y // Ensure the player is above the platform
             ) {
                 this.y = platform.y - this.size; // Place player on top of the platform
                 this.velocityY = 0; // Stop falling
                 this.onGround = true;
                 break;
+            }
+
+            // Check if hitting the platform from below
+            if (
+                !isAbovePlatform &&
+                !isLeftOfPlatform &&
+                !isRightOfPlatform &&
+                this.velocityY < 0 && // Ensure the player is moving upward
+                this.y + this.size > platform.y && // Ensure the player is overlapping the platform
+                this.y <= platform.y + platform.length // Ensure the player is below the platform
+            ) {
+                this.y = platform.y + platform.length; // Push player below the platform
+                this.velocityY = 0; // Stop upward movement
+            }
+
+            // Check if hitting the platform from the left
+            if (
+                !isAbovePlatform &&
+                !isBelowPlatform &&
+                this.x + this.size > platform.x &&
+                this.x < platform.x
+            ) {
+                this.x = platform.x - this.size; // Push player to the left of the platform
+            }
+
+            // Check if hitting the platform from the right
+            if (
+                !isAbovePlatform &&
+                !isBelowPlatform &&
+                this.x < platform.x + platform.width &&
+                this.x + this.size > platform.x + platform.width
+            ) {
+                this.x = platform.x + platform.width; // Push player to the right of the platform
             }
         }
     },
