@@ -31,17 +31,18 @@ const Player = {
     direction: "up",
     damageable: true,
     deaths: 0,
+    airJumps: 1, // Number of air jumps available
+    maxAirJumps: 1, // Maximum air jumps allowed
     die: function () {
-        Player.x = 40;
-        Player.y = 20;
-        Player.velocityY = 0;
-        Player.deaths = Player.deaths + 1;
-
+        this.x = 40;
+        this.y = 20;
+        this.velocityY = 0;
+        this.deaths += 1;
     },
     move: function (dx) {
         this.x += dx;
     },
-    update: function (fire) {
+    update: function () {
         if (!this.onGround) {
             this.velocityY += gravity; // Apply gravity
         }
@@ -66,7 +67,8 @@ const Player = {
             ) {
                 this.y = platform.y - this.size; // Place player on top of the platform
                 this.velocityY = 0; // Stop falling
-                this.onGround = true;
+                this.onGround = true; // Player is grounded
+                this.airJumps = this.maxAirJumps; // Reset air jumps
                 break;
             }
 
@@ -110,7 +112,11 @@ const Player = {
     },
     jump: function () {
         if (this.onGround) {
-            this.velocityY = -10;
+            this.velocityY = -10; // Regular jump
+            this.onGround = false; // Leave the ground
+        } else if (elements[currentElementIndex] === 'wind' && this.airJumps > 0) {
+            this.velocityY = -10; // Air jump
+            this.airJumps -= 1; // Decrease available air jumps
         }
     }
 };
@@ -277,7 +283,7 @@ window.onload = function () {
 };
 
 function gameLoop() {
-    ctx.clearRect(0, 0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw background
     ctx.drawImage(BGImage, 0, 0, 1400, 850);
@@ -298,7 +304,15 @@ function gameLoop() {
     Player.update();
     Player.draw();
 
-    infoText.innerText = "Score: " + Player.score + "/" + targetScore + " Deaths: " + Player.deaths + ", A - Move left, D - Move right, W - Jump, Space - Shoot water, Arrow keys - Change direction of shooting water ";
+    // Update info text
+    infoText.innerText = "Score: " + Player.score + "/" + targetScore + " Deaths: " + Player.deaths + ", A - Move left, D - Move right, W - Jump, Space - Cycle elements, Arrow keys - Change direction of shooting water ";
+    document.getElementById('currentElement').innerText = "Current Element: " + elements[currentElementIndex].name;
+    document.getElementById('currentElement').style.display = 'block'; // Ensure it's visible
+
+    // Display air jumps remaining
+    const airJumpsText = document.getElementById('airJumpsText');
+    airJumpsText.innerText = "Air Jumps Remaining: " + Player.airJumps;
+    airJumpsText.style.display = 'block'; // Ensure it's visible
 
     if (Player.y >= canvas.getAttribute("height")) {
         Player.die();
@@ -316,7 +330,7 @@ function gameLoop() {
         }
         if (fire.playerCollide(Player) && Player.damageable) {
             Player.die();
-            play
+            play();
         }
     }
 
@@ -325,8 +339,7 @@ function gameLoop() {
         if (this.y < 0 || this.y > canvas.getAttribute("height") || this.x < 0 || this.x > canvas.getAttribute("width")) {
             this.die();
             deleteFromArray(water, waterProjectiles);
-        }
-        else {
+        } else {
             water.draw();
             water.tick();
             for (const fire of fires) {
@@ -346,6 +359,7 @@ function gameLoop() {
             }
         }
     }
+
     if (Player.score >= targetScore) {
         ctx.fillStyle = '#88E788';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -359,33 +373,60 @@ function gameLoop() {
         ctx.fillText("We need to push for more preventative measures for these catastrophies in order to eliminate or mitigate the damages from wildfires.", canvas.width / 2 - 600, canvas.height / 2 + 180);
         ctx.fillText("Because gradual global warming and climate change is the primary cause of the increase in natural wildfires as of late, that should be our main priority.", canvas.width / 2 - 650, canvas.height / 2 + 210);
         ctx.fillText("Combatting global warming will not be easy, but we must work together to prevent this impending doom that is knocking on our door.", canvas.width / 2 - 600, canvas.height / 2 + 240);
-
     }
+
     requestAnimationFrame(gameLoop);
 }
 
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
-    if (event.key === 'ArrowRight') {
-        Player.direction = "right";
-        const water = new Water(Player.x, Player.y, Player.direction);
-        waterProjectiles.push(water);
+
+    // Cycle through elements with space
+    if (event.key === ' ') {
+        elements[currentElementIndex].ability(); // Remove current element's ability
+        currentElementIndex = (currentElementIndex + 1) % elements.length;
+        const currentElement = elements[currentElementIndex];
+        console.log(`Current element: ${currentElement.name}`);
+        currentElement.ability(); // Activate new element's ability
+
+        // Update air jumps based on the selected element
+        if (currentElement.name === 'wind') {
+            Player.maxAirJumps = 1; // Allow 1 air jump for wind
+        } else {
+            Player.maxAirJumps = 0; // No air jumps for other elements
+        }
+        Player.airJumps = Player.maxAirJumps; // Reset air jumps
     }
-    if (event.key === 'ArrowLeft') {
-        Player.direction = "left";
-        const water = new Water(Player.x, Player.y, Player.direction);
-        waterProjectiles.push(water);
+
+    // Allow jumping with "w" key
+    if (event.key === 'w') {
+        Player.jump();
+        jumpSound();
     }
-    if (event.key === 'ArrowUp') {
-        Player.direction = "up";
-        const water = new Water(Player.x, Player.y, Player.direction);
-        waterProjectiles.push(water);
-    }
-    if (event.key === "ArrowDown") {
-        Player.direction = "down";
-        const water = new Water(Player.x, Player.y, Player.direction);
-        waterProjectiles.push(water);
+
+    // Handle water shooting only when the water element is selected
+    if (elements[currentElementIndex].name === 'water') {
+        if (event.key === 'ArrowRight') {
+            Player.direction = "right";
+            const water = new Water(Player.x, Player.y, Player.direction);
+            waterProjectiles.push(water);
+        }
+        if (event.key === 'ArrowLeft') {
+            Player.direction = "left";
+            const water = new Water(Player.x, Player.y, Player.direction);
+            waterProjectiles.push(water);
+        }
+        if (event.key === 'ArrowUp') {
+            Player.direction = "up";
+            const water = new Water(Player.x, Player.y, Player.direction);
+            waterProjectiles.push(water);
+        }
+        if (event.key === "ArrowDown") {
+            Player.direction = "down";
+            const water = new Water(Player.x, Player.y, Player.direction);
+            waterProjectiles.push(water);
+        }
     }
 });
 
@@ -403,6 +444,12 @@ function startLevel(level) {
     document.getElementById('titleScreen').style.display = 'none';
     canvas.style.display = 'block';
     infoText.style.display = 'block';
+
+    // Reset player position and state
+    Player.x = 40;
+    Player.y = 20;
+    Player.velocityY = 0;
+    Player.score = 0;
 
     // Clear existing platforms and fires
     platforms.length = 0;
@@ -432,8 +479,141 @@ function startLevel(level) {
     }
 
     // Update target score to match the number of fires
-    targetScore = fires.length; // Dynamically set targetScore here
+    targetScore = fires.length;
 
     // Start the game loop
-    gameLoop();
+    requestAnimationFrame(gameLoop);
 }
+
+// Attach startLevel to the global window object
+window.startLevel = startLevel;
+
+class Element {
+    constructor(name) {
+        this.name = name;
+        this.handleAbility = this.handleAbility.bind(this); // Bind the method to ensure proper context
+    }
+
+    ability() {
+        // Remove any existing event listener before adding a new one
+        document.removeEventListener('keydown', this.handleAbility);
+        document.addEventListener('keydown', this.handleAbility);
+    }
+
+    handleAbility(event) {
+        // Default handler does nothing
+    }
+}
+
+class Wind extends Element {
+    constructor() {
+        super('wind');
+    }
+
+    handleAbility(event) {
+        if (event.key === 'Shift') {
+            console.log('Wind ability activated: Speed boost!');
+            Player.speed = 10; // Example: temporary speed boost
+            setTimeout(() => {
+                Player.speed = 5; // Reset speed after 2 seconds
+            }, 2000);
+        }
+    }
+}
+
+class Water extends Element {
+    constructor() {
+        super('water');
+    }
+
+    handleAbility(event) {
+        if (event.key === 'Shift') {
+            console.log('Water ability activated: Shoot water!');
+            const water = new Water(Player.x, Player.y, Player.direction);
+            waterProjectiles.push(water);
+        }
+    }
+}
+
+class Fire extends Element {
+    constructor() {
+        super('fire');
+    }
+
+    handleAbility(event) {
+        if (event.key === 'Shift') {
+            console.log('Fire ability activated: Fire burst!');
+            // Example: Create a burst of fire around the player
+        }
+    }
+}
+
+class Earth extends Element {
+    constructor() {
+        super('earth');
+    }
+
+    handleAbility(event) {
+        if (event.key === 'Shift') {
+            console.log('Earth ability activated: Shield!');
+            // Example: Create a temporary shield for the player
+        }
+    }
+}
+
+class Lightning extends Element {
+    constructor() {
+        super('lightning');
+    }
+
+    handleAbility(event) {
+        if (event.key === 'Shift') {
+            console.log('Lightning ability activated: Dash!');
+            Player.x += 50; // Example: Dash forward
+        }
+    }
+}
+
+// Initialize elements
+const elements = [new Wind(), new Water(), new Fire(), new Earth(), new Lightning()];
+let currentElementIndex = 0;
+
+// Update the element switching logic
+document.addEventListener('keydown', (event) => {
+    keys[event.key] = true;
+
+    // Cycle through elements with space
+    if (event.key === ' ') {
+        elements[currentElementIndex].ability(); // Remove current element's ability
+        currentElementIndex = (currentElementIndex + 1) % elements.length;
+        const currentElement = elements[currentElementIndex];
+        console.log(`Current element: ${currentElement.name}`);
+        currentElement.ability(); // Activate new element's ability
+
+        // Update air jumps for wind
+        if (currentElement.name === 'wind') {
+            Player.maxAirJumps = 1; // Allow 1 air jump for wind
+        } else {
+            Player.maxAirJumps = 0; // No air jumps for other elements
+        }
+        Player.airJumps = Player.maxAirJumps; // Reset air jumps
+    }
+
+    // Allow jumping with "w" key
+    if (event.key === 'w') {
+        Player.jump();
+        jumpSound();
+    }
+});
+
+// Modify the Player.jump function to support double jump for wind
+Player.jump = function () {
+    if (this.onGround) {
+        this.velocityY = -10; // Regular jump
+        this.onGround = false; // Leave the ground
+        canDoubleJump = true; // Reset double jump availability
+    } else if (canDoubleJump) {
+        this.velocityY = -10; // Double jump
+        canDoubleJump = false; // Disable further double jumps until grounded
+    }
+};
