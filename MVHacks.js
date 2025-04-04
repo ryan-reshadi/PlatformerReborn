@@ -19,7 +19,59 @@ const deleteFromArray = function (target, array) {
     }
     return returnArray;
 } // Function to delete an element from an array, used for waterBall elements
+const LightningElement = {
+    abilityTimer: 0,
+    abilityCooldown: 1, // 3 seconds cooldown
+    ability: function (key) {
+        if (this.abilityTimer > 0) {
+            this.abilityTimer -= 1; // Decrease the timer by 100ms
+            return; // Skip ability activation if cooldown is active
+        }
+        if (this.abilityTimer <= 0) {
+            this.abilityTimer = this.abilityCooldown; // Reset the timer
+        }
+        if (key === 'ArrowRight') {
+            Player.x += 100; // Blink right
+        }
+        if (key === 'ArrowLeft') {
+            Player.x -= 100; // Blink left
+        }
+        if (key === 'ArrowUp') {
+            Player.y -= 100; // Blink up
+        }
+        if (key === "ArrowDown") {
+            Player.y += 100; // Blink down
+        }
+    }
 
+}
+const WaterElement = {
+    ability: function (key) {
+        if (key === 'ArrowRight') {
+            Player.direction = "right";
+            const water = new Water(Player.x, Player.y, Player.direction);
+            waterProjectiles.push(water);
+        }
+        if (key === 'ArrowLeft') {
+            Player.direction = "left";
+            const water = new Water(Player.x, Player.y, Player.direction);
+            waterProjectiles.push(water);
+        }
+        if (key === 'ArrowUp') {
+            // Player.direction = "up";
+            console.log("up");
+            const water = new Water(Player.x, Player.y, Player.direction);
+            waterProjectiles.push(water);
+        }
+        if (key === "ArrowDown") {
+            Player.direction = "down";
+            const water = new Water(Player.x, Player.y, Player.direction);
+            waterProjectiles.push(water);
+        }
+    }
+}
+
+const elements = [WaterElement, LightningElement];
 const Player = {
     x: 40,
     y: 20,
@@ -31,6 +83,7 @@ const Player = {
     direction: "up",
     damageable: true,
     deaths: 0,
+    elementIndex: 0,
     die: function () {
         Player.x = 40;
         Player.y = 20;
@@ -121,11 +174,11 @@ const Player = {
 // console.log(water1.x);
 function play() {
     let audio = new Audio('playerDeath.mp3');
-    audio.play().catch(error => console.error("Playback error:", error));
+    // audio.play().catch(error => console.error("Playback error:", error));
 };
 function jumpSound() {
     let audio = new Audio('playerJump.mp3');
-    audio.play().catch(error => console.error("Playback error:", error));
+    // audio.play().catch(error => console.error("Playback error:", error));
 }
 
 
@@ -367,26 +420,36 @@ function gameLoop() {
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
-    if (event.key === 'ArrowRight') {
-        Player.direction = "right";
-        const water = new Water(Player.x, Player.y, Player.direction);
-        waterProjectiles.push(water);
+    elements[Player.elementIndex].ability(event.key);
+    if (event.key === ' ') {
+        Player.elementIndex+=1;
+        if (Player.elementIndex >= elements.length) {
+            Player.elementIndex = 0;
+        }
     }
-    if (event.key === 'ArrowLeft') {
-        Player.direction = "left";
-        const water = new Water(Player.x, Player.y, Player.direction);
-        waterProjectiles.push(water);
+    if (elements[Player.elementIndex] === LightningElement) {
+        
     }
-    if (event.key === 'ArrowUp') {
-        Player.direction = "up";
-        const water = new Water(Player.x, Player.y, Player.direction);
-        waterProjectiles.push(water);
-    }
-    if (event.key === "ArrowDown") {
-        Player.direction = "down";
-        const water = new Water(Player.x, Player.y, Player.direction);
-        waterProjectiles.push(water);
-    }
+    // if (event.key === 'ArrowRight') {
+    //     Player.direction = "right";
+    //     const water = new Water(Player.x, Player.y, Player.direction);
+    //     waterProjectiles.push(water);
+    // }
+    // if (event.key === 'ArrowLeft') {
+    //     Player.direction = "left";
+    //     const water = new Water(Player.x, Player.y, Player.direction);
+    //     waterProjectiles.push(water);
+    // }
+    // if (event.key === 'ArrowUp') {
+    //     Player.direction = "up";
+    //     const water = new Water(Player.x, Player.y, Player.direction);
+    //     waterProjectiles.push(water);
+    // }
+    // if (event.key === "ArrowDown") {
+    //     Player.direction = "down";
+    //     const water = new Water(Player.x, Player.y, Player.direction);
+    //     waterProjectiles.push(water);
+    // }
 });
 
 document.addEventListener('keyup', (event) => {
