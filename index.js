@@ -24,7 +24,7 @@ const LightningElement = {
     enabled: true,
     cooldown: 1000, // cooldown in ms
     ability: function (key) {
-        if (!this.enabled) {return}; // Check if the ability is on cooldown
+        if (!this.enabled) { return }; // Check if the ability is on cooldown
         if (key === 'ArrowRight') {
             Player.x += 100; // Blink right
             this.timerStart();
@@ -43,7 +43,7 @@ const LightningElement = {
         }
     },
     timerStart: function () {
-        this.enabled= false;
+        this.enabled = false;
         setTimeout(() => {
             this.enabled = true;
         }, this.cooldown); // 5 seconds cooldown
@@ -283,47 +283,7 @@ function Platform(x, y, width, length, color) {
 objects.push(Player);
 
 const height = 20
-const brown = '#964B00'
-// Create platforms
-// platforms.push(new Platform(50, 200, 200, height, brown));
-// platforms.push(new Platform(250, 400, 75, height, brown));
-// platforms.push(new Platform(450, 400, 75, height, brown));
-// platforms.push(new Platform(650, 320, 20, height * 5, brown)); // tall wall
-// platforms.push(new Platform(620, 450, 20, height, brown)); // small platform
-// platforms.push(new Platform(480, 500, 80, height, brown));
-
-// platforms.push(new Platform(300, 670, 100, height, brown));
-// platforms.push(new Platform(490, 630, 20, height * 2.5, brown));
-// platforms.push(new Platform(600, 670, 70, height, brown));
-
-// platforms.push(new Platform(800, 670, 70, height, brown));
-
-// platforms.push(new Platform(1070, 670, 150, height, brown));
-
-// for (let i = 90; i <= 90 * 4; i = i + 90) {
-//     platforms.push(new Platform(1100, 670 - i, 110, height, brown));
-// }
-
-
-// fires.push(new Fire(100, 150));
-// fires.push(new Fire(200, 300));
-// fires.push(new Fire(700, 200));
-// fires.push(new Fire(750, 200));
-// fires.push(new Fire(1000, 200));
-// fires.push(new Fire(1100, 100));
-// fires.push(new Fire(1300, 200));
-// fires.push(new Fire(300, 450));
-// fires.push(new Fire(800, 450));
-// fires.push(new Fire(1000, 475));
-// fires.push(new Fire(500, 550));
-// fires.push(new Fire(600, 600));
-
-// for (const fire of fires) {
-//     objects.push(fire);
-// }
-// for (const platform in platforms) {
-//     objects.push(platform);
-// }
+const brown = '#964B00'; // Brown color for platforms
 const BGImage = new Image(1400, 850);
 BGImage.src = 'forest.webp';
 
@@ -448,26 +408,6 @@ document.addEventListener('keydown', (event) => {
     if (elements[Player.elementIndex] === LightningElement) {
 
     }
-    // if (event.key === 'ArrowRight') {
-    //     Player.direction = "right";
-    //     const water = new Water(Player.x, Player.y, Player.direction);
-    //     waterProjectiles.push(water);
-    // }
-    // if (event.key === 'ArrowLeft') {
-    //     Player.direction = "left";
-    //     const water = new Water(Player.x, Player.y, Player.direction);
-    //     waterProjectiles.push(water);
-    // }
-    // if (event.key === 'ArrowUp') {
-    //     Player.direction = "up";
-    //     const water = new Water(Player.x, Player.y, Player.direction);
-    //     waterProjectiles.push(water);
-    // }
-    // if (event.key === "ArrowDown") {
-    //     Player.direction = "down";
-    //     const water = new Water(Player.x, Player.y, Player.direction);
-    //     waterProjectiles.push(water);
-    // }
 });
 
 document.addEventListener('keyup', (event) => {
@@ -493,6 +433,7 @@ function startLevel(level) {
     if (level === 1) {
         platforms.push(new Platform(50, 200, 200, height, brown));
         platforms.push(new Platform(250, 400, 75, height, brown));
+        platforms.push(new Platform(225, 100, 20, 75, brown));
         fires.push(new Fire(100, 150));
         fires.push(new Fire(200, 300));
     } else if (level === 2) {
