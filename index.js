@@ -6,6 +6,7 @@ const waterProjectiles = [];
 const gravity = 0.4; // Gravity force
 const platforms = []; // Array to hold platforms
 const fires = []; //array to hold fires
+var offset = 0; //tracks objects offset
 //const fireCrackles = new Audio("./fireCrackle.mp3");
 
 //const pouringWater = new Audio("./pouringWater.mp3");
@@ -20,28 +21,32 @@ const deleteFromArray = function (target, array) {
     return returnArray;
 } // Function to delete an element from an array, used for waterBall elements
 const LightningElement = {
-    abilityTimer: 0,
-    abilityCooldown: 1, // 3 seconds cooldown
+    enabled: true,
+    cooldown: 1000,
     ability: function (key) {
-        if (this.abilityTimer > 0) {
-            this.abilityTimer -= 1; // Decrease the timer by 100ms
-            return; // Skip ability activation if cooldown is active
-        }
-        if (this.abilityTimer <= 0) {
-            this.abilityTimer = this.abilityCooldown; // Reset the timer
-        }
+        if (!this.enabled) {return}; // Check if the ability is on cooldown
         if (key === 'ArrowRight') {
             Player.x += 100; // Blink right
+            this.timerStart();
         }
         if (key === 'ArrowLeft') {
             Player.x -= 100; // Blink left
+            this.timerStart();
         }
         if (key === 'ArrowUp') {
             Player.y -= 100; // Blink up
+            this.timerStart();
         }
         if (key === "ArrowDown") {
             Player.y += 100; // Blink down
+            this.timerStart();
         }
+    },
+    timerStart: function () {
+        this.enabled= false;
+        setTimeout(() => {
+            this.enabled = true;
+        }, this.cooldown); // 5 seconds cooldown
     }
 
 }
@@ -85,6 +90,10 @@ const Player = {
     deaths: 0,
     elementIndex: 0,
     die: function () {
+        for (i of objects) {
+            i.x += offset;
+        }
+        offset = 0;
         Player.x = 40;
         Player.y = 20;
         Player.velocityY = 0;
@@ -168,10 +177,7 @@ const Player = {
     }
 };
 
-// player1 = new Player();
-// water1 = new Water(Player);
-// water1.x= 20;
-// console.log(water1.x);
+
 function play() {
     let audio = new Audio('playerDeath.mp3');
     // audio.play().catch(error => console.error("Playback error:", error));
@@ -229,10 +235,11 @@ function Fire(x, y) {
     this.y = y;
     this.size = 30;
     this.dead = false;
+    this.image = new Image();
+    this.image.src = 'fire.webp';
     this.draw = function () {
-        const image = new Image();
-        image.src = 'fire.webp';
-        ctx.drawImage(image, x, y, this.size, this.size);
+        ctx.drawImage(this.image, x, y, this.size, this.size);
+        
     },
         this.die = function () {
             this.x = canvas.width + 20;
@@ -279,45 +286,45 @@ objects.push(Player);
 const height = 20
 const brown = '#964B00'
 // Create platforms
-platforms.push(new Platform(50, 200, 200, height, brown));
-platforms.push(new Platform(250, 400, 75, height, brown));
-platforms.push(new Platform(450, 400, 75, height, brown));
-platforms.push(new Platform(650, 320, 20, height * 5, brown)); // tall wall
-platforms.push(new Platform(620, 450, 20, height, brown)); // small platform
-platforms.push(new Platform(480, 500, 80, height, brown));
-// Jump over wall
-platforms.push(new Platform(300, 670, 100, height, brown));
-platforms.push(new Platform(490, 630, 20, height * 2.5, brown));
-platforms.push(new Platform(600, 670, 70, height, brown));
+// platforms.push(new Platform(50, 200, 200, height, brown));
+// platforms.push(new Platform(250, 400, 75, height, brown));
+// platforms.push(new Platform(450, 400, 75, height, brown));
+// platforms.push(new Platform(650, 320, 20, height * 5, brown)); // tall wall
+// platforms.push(new Platform(620, 450, 20, height, brown)); // small platform
+// platforms.push(new Platform(480, 500, 80, height, brown));
 
-platforms.push(new Platform(800, 670, 70, height, brown));
-// Elevator
-platforms.push(new Platform(1070, 670, 150, height, brown));
+// platforms.push(new Platform(300, 670, 100, height, brown));
+// platforms.push(new Platform(490, 630, 20, height * 2.5, brown));
+// platforms.push(new Platform(600, 670, 70, height, brown));
 
-for (let i = 90; i <= 90 * 4; i = i + 90) {
-    platforms.push(new Platform(1100, 670 - i, 110, height, brown));
-}
+// platforms.push(new Platform(800, 670, 70, height, brown));
 
-// Create fires
-fires.push(new Fire(100, 150));
-fires.push(new Fire(200, 300));
-fires.push(new Fire(700, 200));
-fires.push(new Fire(750, 200));
-fires.push(new Fire(1000, 200));
-fires.push(new Fire(1100, 100));
-fires.push(new Fire(1300, 200));
-fires.push(new Fire(300, 450));
-fires.push(new Fire(800, 450));
-fires.push(new Fire(1000, 475));
-fires.push(new Fire(500, 550));
-fires.push(new Fire(600, 600));
+// platforms.push(new Platform(1070, 670, 150, height, brown));
 
-for (const fire of fires) {
-    objects.push(fire);
-}
-for (const platform in platforms) {
-    objects.push(platform);
-}
+// for (let i = 90; i <= 90 * 4; i = i + 90) {
+//     platforms.push(new Platform(1100, 670 - i, 110, height, brown));
+// }
+
+
+// fires.push(new Fire(100, 150));
+// fires.push(new Fire(200, 300));
+// fires.push(new Fire(700, 200));
+// fires.push(new Fire(750, 200));
+// fires.push(new Fire(1000, 200));
+// fires.push(new Fire(1100, 100));
+// fires.push(new Fire(1300, 200));
+// fires.push(new Fire(300, 450));
+// fires.push(new Fire(800, 450));
+// fires.push(new Fire(1000, 475));
+// fires.push(new Fire(500, 550));
+// fires.push(new Fire(600, 600));
+
+// for (const fire of fires) {
+//     objects.push(fire);
+// }
+// for (const platform in platforms) {
+//     objects.push(platform);
+// }
 const BGImage = new Image(1400, 850);
 BGImage.src = 'forest.webp';
 
@@ -363,16 +370,28 @@ function gameLoop() {
     }
 
     // Draw fires and check collisions
-    for (const fire of fires) {
+    for (var fire of fires) {
         if (!fire.dead) {
             fire.draw();
         }
         if (fire.playerCollide(Player) && Player.damageable) {
             Player.die();
-            play
         }
     }
+    if (Player.x >= canvas.getAttribute("width")) {
 
+        offset += Player.speed;
+        for (const object of objects) {
+            object.x -= Player.speed;
+        }
+    }
+    if (Player.x <= 0) {
+
+        offset -= Player.speed;
+        for (const object of objects) {
+            object.x += Player.speed;
+        }
+    }
     // Handle water projectiles
     for (const water of waterProjectiles) {
         if (this.y < 0 || this.y > canvas.getAttribute("height") || this.x < 0 || this.x > canvas.getAttribute("width")) {
@@ -527,7 +546,12 @@ function startLevel(level) {
         fires.push(new Fire(500, 550));
         fires.push(new Fire(600, 600));
     }
-
+    for (i of fires) {
+        objects.push(i);
+    }
+    for (i of platforms) {
+        objects.push(i);
+    }
     // Update target score to match the number of fires
     targetScore = fires.length; // Dynamically set targetScore here
 
