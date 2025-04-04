@@ -59,7 +59,7 @@ const WaterElement = {
         }
         if (key === 'ArrowUp') {
             // Player.direction = "up";
-            console.log("up");
+            Player.direction = "up";
             const water = new Water(Player.x, Player.y, Player.direction);
             waterProjectiles.push(water);
         }
@@ -422,13 +422,13 @@ document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
     elements[Player.elementIndex].ability(event.key);
     if (event.key === ' ') {
-        Player.elementIndex+=1;
+        Player.elementIndex += 1;
         if (Player.elementIndex >= elements.length) {
             Player.elementIndex = 0;
         }
     }
     if (elements[Player.elementIndex] === LightningElement) {
-        
+
     }
     // if (event.key === 'ArrowRight') {
     //     Player.direction = "right";
@@ -492,6 +492,40 @@ function startLevel(level) {
         fires.push(new Fire(450, 450));
         fires.push(new Fire(750, 250));
         fires.push(new Fire(800, 200));
+    }
+    else if (level === 4) {
+        platforms.push(new Platform(50, 200, 200, height, brown));
+        platforms.push(new Platform(250, 400, 75, height, brown));
+        platforms.push(new Platform(450, 400, 75, height, brown));
+        platforms.push(new Platform(650, 320, 20, height * 5, brown)); // tall wall
+        platforms.push(new Platform(620, 450, 20, height, brown)); // small platform
+        platforms.push(new Platform(480, 500, 80, height, brown));
+        // Jump over wall
+        platforms.push(new Platform(300, 670, 100, height, brown));
+        platforms.push(new Platform(490, 630, 20, height * 2.5, brown));
+        platforms.push(new Platform(600, 670, 70, height, brown));
+
+        platforms.push(new Platform(800, 670, 70, height, brown));
+        // Elevator
+        platforms.push(new Platform(1070, 670, 150, height, brown));
+
+        for (let i = 90; i <= 90 * 4; i = i + 90) {
+            platforms.push(new Platform(1100, 670 - i, 110, height, brown));
+        }
+
+        // Create fires
+        fires.push(new Fire(100, 150));
+        fires.push(new Fire(200, 300));
+        fires.push(new Fire(700, 200));
+        fires.push(new Fire(750, 200));
+        fires.push(new Fire(1000, 200));
+        fires.push(new Fire(1100, 100));
+        fires.push(new Fire(1300, 200));
+        fires.push(new Fire(300, 450));
+        fires.push(new Fire(800, 450));
+        fires.push(new Fire(1000, 475));
+        fires.push(new Fire(500, 550));
+        fires.push(new Fire(600, 600));
     }
 
     // Update target score to match the number of fires

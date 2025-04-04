@@ -7,7 +7,7 @@
         {
             "type": "msedge",
             "request": "launch",
-            "name": "Open MVHacks.html",
+            "name": "Open index.html",
             // "file": "c:\\Users\\ryanr\\Downloads\\GitHub\\thing\\MVHacks2025Project\\MVHacks.html"
         }
     ]
