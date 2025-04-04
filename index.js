@@ -22,7 +22,7 @@ const deleteFromArray = function (target, array) {
 } // Function to delete an element from an array, used for waterBall elements
 const LightningElement = {
     enabled: true,
-    cooldown: 1000,
+    cooldown: 1000, // cooldown in ms
     ability: function (key) {
         if (!this.enabled) {return}; // Check if the ability is on cooldown
         if (key === 'ArrowRight') {
@@ -238,8 +238,7 @@ function Fire(x, y) {
     this.image = new Image();
     this.image.src = 'fire.webp';
     this.draw = function () {
-        ctx.drawImage(this.image, x, y, this.size, this.size);
-        
+        ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
     },
         this.die = function () {
             this.x = canvas.width + 20;
