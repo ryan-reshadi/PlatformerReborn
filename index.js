@@ -317,7 +317,7 @@ function gameLoop() {
     Player.update();
     Player.draw();
 
-    infoText.innerText = "Score: " + Player.score + "/" + targetScore + " Deaths: " + Player.deaths + ", A - Move left, D - Move right, W - Jump, Space - Shoot water, Arrow keys - Change direction of shooting water ";
+    infoText.innerText = "Score: " + Player.score + "/" + targetScore + " Deaths: " + Player.deaths + ", A - Move left, D - Move right, W - Jump, Space - Switch Element, Arrow Keys - Use Element Ability";
 
     if (Player.y >= canvas.getAttribute("height")) {
         Player.die();
