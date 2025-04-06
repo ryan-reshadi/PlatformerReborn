@@ -39,6 +39,7 @@ const LightningElement = {
         }
         if (key === "ArrowDown") {
             Player.y += 100; // Blink down
+            
             this.timerStart();
         }
     },
@@ -194,10 +195,10 @@ function Water(x, y, direction) {
     this.speed = 15;
     this.size = 15;
     this.direction = direction;
+    this.image = new Image();
+    this.image.src = 'waterBall.webp';
     this.draw = function () {
-        const image = new Image();
-        image.src = 'waterBall.webp';
-        ctx.drawImage(image, this.x, this.y, this.size, this.size);
+        ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
     }
     this.collide = function (object) {
         if (
