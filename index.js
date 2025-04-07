@@ -20,6 +20,11 @@ const deleteFromArray = function (target, array) {
     }
     return returnArray;
 } // Function to delete an element from an array, used for waterBall elements
+
+class Element {
+    
+}
+
 const LightningElement = {
     enabled: true,
     cooldown: 1000, // cooldown in ms
@@ -270,9 +275,10 @@ function Fire(x, y) {
     }
 }
 
-function Platform(x, y, width, length, color) {
+function Platform(x, y, width, length, color, phaseable) {
     this.x = x;
     this.y = y;
+    this.phaseable = phaseable
     this.width = width;
     this.length = length;
     this.color = color;
