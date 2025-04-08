@@ -22,7 +22,7 @@ const deleteFromArray = function (target, array) {
 } // Function to delete an element from an array, used for waterBall elements
 
 class Element {
-    constructor(abilityFunction = {}, cooldown = 0){
+    constructor(abilityFunction, cooldown = 0){
         this.enabled = true;
         this.abilityFunction = abilityFunction;
         if (cooldown === 0){
@@ -38,10 +38,10 @@ class Element {
         this.abilityFunction(key);
         if (this.hasCooldown){
             this.enabled = false;
-            this.timerStart();
+            this.#timerStart();
         }
     }
-    timerStart() {
+    #timerStart() {
         this.enabled = false;
         setTimeout(() => {
             this.enabled = true;
@@ -96,62 +96,6 @@ const waterAbilityFunction = (key) => {
 }
 const lightningElement = new Element(lightningAbilityFunction, 1000); // 1-second cooldown
 const waterElement = new Element(waterAbilityFunction);
-// const LightningElement1 = {
-//     enabled: true,
-//     cooldown: 1000, // cooldown in ms
-//     ability: function (key) {
-//         if (!this.enabled) { return }; // Check if the ability is on cooldown
-//         if (key === 'ArrowRight') {
-//             Player.x += 100; // Blink right
-//             this.timerStart();
-//         }
-//         if (key === 'ArrowLeft') {
-//             Player.x -= 100; // Blink left
-//             this.timerStart();
-//         }
-//         if (key === 'ArrowUp') {
-//             Player.y -= 100; // Blink up
-//             this.timerStart();
-//         }
-//         if (key === "ArrowDown") {
-//             Player.y += 100; // Blink down
-            
-//             this.timerStart();
-//         }
-//     },
-//     timerStart: function () {
-//         this.enabled = false;
-//         setTimeout(() => {
-//             this.enabled = true;
-//         }, this.cooldown); // 5 seconds cooldown
-//     }
-
-// }
-// const WaterElement = {
-//     ability: function (key) {
-//         if (key === 'ArrowRight') {
-//             Player.direction = "right";
-//             const water = new Water(Player.x, Player.y, Player.direction);
-//             waterProjectiles.push(water);
-//         }
-//         if (key === 'ArrowLeft') {
-//             Player.direction = "left";
-//             const water = new Water(Player.x, Player.y, Player.direction);
-//             waterProjectiles.push(water);
-//         }
-//         if (key === 'ArrowUp') {
-//             // Player.direction = "up";
-//             Player.direction = "up";
-//             const water = new Water(Player.x, Player.y, Player.direction);
-//             waterProjectiles.push(water);
-//         }
-//         if (key === "ArrowDown") {
-//             Player.direction = "down";
-//             const water = new Water(Player.x, Player.y, Player.direction);
-//             waterProjectiles.push(water);
-//         }
-//     }
-// }
 
 const elements = [waterElement, lightningElement];
 const Player = {
@@ -396,7 +340,6 @@ function gameLoop() {
     Player.draw();
 
     infoText.innerText = "Score: " + Player.score + "/" + targetScore + " Deaths: " + Player.deaths + ", A - Move left, D - Move right, W - Jump, Space - Switch Element, Arrow Keys - Use Element Ability";
-
     if (Player.y >= canvas.getAttribute("height")) {
         Player.die();
     }
@@ -482,9 +425,6 @@ document.addEventListener('keydown', (event) => {
         if (Player.elementIndex >= elements.length) {
             Player.elementIndex = 0;
         }
-    }
-    if (elements[Player.elementIndex] === LightningElement) {
-
     }
 });
 
