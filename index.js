@@ -35,7 +35,7 @@ class Element {
     }
     ability(key){
         if (!this.enabled) { return }; // Check if the ability is on cooldown   
-        this.abilityFunction();
+        this.abilityFunction(key);
         if (this.hasCooldown){
             this.enabled = false;
             this.timerStart();
