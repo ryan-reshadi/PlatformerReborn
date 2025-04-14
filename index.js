@@ -34,12 +34,12 @@ class Element {
         }
     }
     ability(key){
-        if (!this.enabled) { return }; // Check if the ability is on cooldown   
-        this.abilityFunction(key);
-        if (this.hasCooldown){
+        if (this.enabled) {; // Check if the ability is on cooldown   
+        if (this.abilityFunction(key) && this.hasCooldown){
             this.enabled = false;
             this.#timerStart();
         }
+    }
     }
     #timerStart() {
         this.enabled = false;
@@ -61,43 +61,61 @@ class Element {
 // }
 
 const lightningAbilityFunction = (key) => {
+    var activated = true;
     if (key === 'ArrowRight') {
         Player.x += 100; // Blink right
     } else if (key === 'ArrowLeft') {
         Player.x -= 100; // Blink left
-    } else if (key === 'ArrowUp') {
-        Player.y -= 100; // Blink up
-    } else if (key === 'ArrowDown') {
-        Player.y += 100; // Blink down
+    // } else if (key === 'ArrowUp') {
+    //     Player.y -= 100; // Blink up
+    // } else if (key === 'ArrowDown') {
+    //     Player.y += 100; // Blink down
+    } else {
+        activated = false;
     }
+    return activated;
 };
 const waterAbilityFunction = (key) => {
+    var activated = false;
     if (key === 'ArrowRight') {
         Player.direction = "right";
         const water = new Water(Player.x, Player.y, Player.direction);
         waterProjectiles.push(water);
+        activated = true;
     }
     if (key === 'ArrowLeft') {
         Player.direction = "left";
         const water = new Water(Player.x, Player.y, Player.direction);
         waterProjectiles.push(water);
+        activated = true;
     }
     if (key === 'ArrowUp') {
         // Player.direction = "up";
         Player.direction = "up";
         const water = new Water(Player.x, Player.y, Player.direction);
         waterProjectiles.push(water);
+        activated = true;
     }
     if (key === "ArrowDown") {
         Player.direction = "down";
         const water = new Water(Player.x, Player.y, Player.direction);
         waterProjectiles.push(water);
+        activated = true;
     }
+    return activated;
 }
-const lightningElement = new Element(lightningAbilityFunction, 1000); // 1-second cooldown
+const windAbilityFunction = (key) => {
+    var activated = false;
+    if (key === "ArrowUp" && !Player.onGround){
+        Player.velocityY = -10; // Jump
+        activated = true;
+    }
+    return activated;
+}
+const lightningElement = new Element(lightningAbilityFunction,1000); // 1-second cooldown
 const waterElement = new Element(waterAbilityFunction);
-
-const elements = [waterElement, lightningElement];
+const windElement = new Element(windAbilityFunction,1000); // 1-second cooldown
+const elements = [waterElement, lightningElement, windElement];
 const Player = {
     x: 40,
     y: 20,
@@ -309,6 +327,7 @@ const brown = '#964B00'; // Brown color for platforms
 const BGImage = new Image(1400, 850);
 BGImage.src = 'forest.webp';
 
+let currentLevel = 1; // Define a global variable to track the current level
 
 // Ensure the title screen is displayed on page load
 window.onload = function () {
@@ -318,10 +337,11 @@ window.onload = function () {
 };
 
 function gameLoop() {
-    ctx.clearRect(0, 0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw background
     ctx.drawImage(BGImage, 0, 0, 1400, 850);
+    
 
     // Handle player movement
     if (keys['a']) {
@@ -398,6 +418,52 @@ function gameLoop() {
             }
         }
     }
+    switch (currentLevel) {
+        case 1:
+            var textColor = "white";
+            break;
+        case 2:
+            var textColor = "white";
+            break;
+        case 3:
+            var textColor = "white";
+            break;
+        case 4:
+            var textColor = "white";
+            break;
+        default:
+            var textColor = "white";
+            break;
+    }
+    ctx.fillStyle = textColor;
+    ctx.font = "20px Arial";
+    ctx.fillText("Level " + currentLevel, 10, 20);
+    switch (Player.elementIndex) {
+        case 0:
+            var elementName = "Water";
+            break;
+        case 1:
+            var elementName = "Lightning";
+            break;
+        case 2:
+            var elementName = "Wind";
+            break;
+        default:
+            var elementName = "Unknown Element";
+            break;
+
+    }
+    ctx.fillText("Current Element: " + elementName, canvas.width-250, 20);
+    if (elements[Player.elementIndex].hasCooldown) {
+        if (elements[Player.elementIndex].enabled) {
+            ctx.fillStyle = 'green';
+            ctx.fillText("Status: Ready", canvas.width - 250, 40);
+        }
+        else {
+            ctx.fillStyle = 'red';
+            ctx.fillText("Status: Recharging", canvas.width - 250, 40);
+        }
+    }
     if (Player.score >= targetScore) {
         ctx.fillStyle = '#88E788';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -438,6 +504,9 @@ BGImage.onload = function () {
 };
 
 function startLevel(level) {
+    // Set the current level globally
+    currentLevel = level;
+
     // Hide the title screen and show the game canvas
     document.getElementById('titleScreen').style.display = 'none';
     canvas.style.display = 'block';
@@ -451,7 +520,7 @@ function startLevel(level) {
     if (level === 1) {
         platforms.push(new Platform(50, 200, 200, height, brown));
         platforms.push(new Platform(250, 400, 75, height, brown));
-        platforms.push(new Platform(225, 100, 20, 75, brown));
+        platforms.push(new Platform(225, 125, 200, 75, brown));
         fires.push(new Fire(100, 150));
         fires.push(new Fire(200, 300));
     } else if (level === 2) {
