@@ -62,18 +62,18 @@ class Element {
 
 const lightningAbilityFunction = (key) => {
     var activated = true;
-    let newX = Player.x;
-    let newY = Player.y;
+    let newX = player.x;
+    let newY = player.y;
     let blinkDistance = 150; // Maximum distance to teleport
     const step = 10; // Step size for incremental teleportation
 
     if (key === 'ArrowRight') {
         for (let i = 0; i <= blinkDistance; i += step) {
-            const testX = Player.x + i;
+            const testX = player.x + i;
             const isColliding = platforms.some(platform => {
-                const isAbovePlatform = newY + Player.size <= platform.y;
+                const isAbovePlatform = newY + player.size <= platform.y;
                 const isBelowPlatform = newY >= platform.y + platform.length;
-                const isLeftOfPlatform = testX + Player.size <= platform.x;
+                const isLeftOfPlatform = testX + player.size <= platform.x;
                 const isRightOfPlatform = testX >= platform.x + platform.width;
 
                 return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
@@ -83,11 +83,11 @@ const lightningAbilityFunction = (key) => {
         }
     } else if (key === 'ArrowLeft') {
         for (let i = 0; i <= blinkDistance; i += step) {
-            const testX = Player.x - i;
+            const testX = player.x - i;
             const isColliding = platforms.some(platform => {
-                const isAbovePlatform = newY + Player.size <= platform.y;
+                const isAbovePlatform = newY + player.size <= platform.y;
                 const isBelowPlatform = newY >= platform.y + platform.length;
-                const isLeftOfPlatform = testX + Player.size <= platform.x;
+                const isLeftOfPlatform = testX + player.size <= platform.x;
                 const isRightOfPlatform = testX >= platform.x + platform.width;
 
                 return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
@@ -100,35 +100,35 @@ const lightningAbilityFunction = (key) => {
     }
 
     // Update player position
-    Player.x = newX;
-    Player.y = newY;
+    player.x = newX;
+    player.y = newY;
 
     return activated;
 };
 const waterAbilityFunction = (key) => {
     var activated = false;
     if (key === 'ArrowRight') {
-        Player.direction = "right";
-        const water = new Water(Player.x, Player.y, Player.direction);
+        player.direction = "right";
+        const water = new Water(player.x, player.y, player.direction);
         waterProjectiles.push(water);
         activated = true;
     }
     if (key === 'ArrowLeft') {
-        Player.direction = "left";
-        const water = new Water(Player.x, Player.y, Player.direction);
+        player.direction = "left";
+        const water = new Water(player.x, player.y, player.direction);
         waterProjectiles.push(water);
         activated = true;
     }
     if (key === 'ArrowUp') {
-        // Player.direction = "up";
-        Player.direction = "up";
-        const water = new Water(Player.x, Player.y, Player.direction);
+        // player.direction = "up";
+        player.direction = "up";
+        const water = new Water(player.x, player.y, player.direction);
         waterProjectiles.push(water);
         activated = true;
     }
     if (key === "ArrowDown") {
-        Player.direction = "down";
-        const water = new Water(Player.x, Player.y, Player.direction);
+        player.direction = "down";
+        const water = new Water(player.x, player.y, player.direction);
         waterProjectiles.push(water);
         activated = true;
     }
@@ -136,8 +136,8 @@ const waterAbilityFunction = (key) => {
 }
 const windAbilityFunction = (key) => {
     var activated = false;
-    if (key === "ArrowUp" || key === "W" && !Player.onGround){
-        Player.velocityY = -10; // Jump
+    if (key === "ArrowUp" || key === "W" && !player.onGround){
+        player.velocityY = -10; // Jump
         activated = true;
     }
     return activated;
@@ -146,33 +146,34 @@ const lightningElement = new Element(lightningAbilityFunction,1000); // 1-second
 const waterElement = new Element(waterAbilityFunction);
 const windElement = new Element(windAbilityFunction,1000); // 1-second cooldown
 const elements = [waterElement, lightningElement, windElement];
-const Player = {
-    x: 40,
-    y: 20,
-    size: 20,
-    speed: 5,
-    velocityY: 0, // Vertical velocity
-    score: 0,
-    onGround: false,
-    direction: "up",
-    damageable: true,
-    deaths: 0,
-    elementIndex: 0,
-    die: function () {
+class Player {
+    constructor() {
+        this.x = 40;
+        this.y = 20;
+        this.size = 20;
+        this.speed = 5;
+        this.velocityY = 0; // Vertical velocity
+        this.score = 0;
+        this.onGround = false;
+        this.direction = "up";
+        this.damageable = true;
+        this.deaths= -1;
+        this.elementIndex= 0;
+    }
+    die() {
         for (i of objects) {
             i.x += offset;
         }
         offset = 0;
-        Player.x = 40;
-        Player.y = 20;
-        Player.velocityY = 0;
-        Player.deaths = Player.deaths + 1;
-
-    },
-    move: function (dx) {
+        this.x = 40;
+        this.y = 20;
+        this.velocityY = 0;
+        this.deaths = this.deaths + 1;
+    }
+    move(dx) {
         this.x += dx;
-    },
-    update: function (fire) {
+    }
+    update() {
         if (!this.onGround) {
             this.velocityY += gravity; // Apply gravity
         }
@@ -234,17 +235,20 @@ const Player = {
                 this.x = platform.x + platform.width; // Push player to the right of the platform
             }
         }
-    },
-    draw: function () {
+    }
+    draw() {
         ctx.fillStyle = 'red';
         ctx.fillRect(this.x, this.y, this.size, this.size);
-    },
-    jump: function () {
+    }
+    jump() {
         if (this.onGround) {
             this.velocityY = -10;
         }
     }
-};
+}
+
+var targetScore = 0; // Set the target score to 0 initially
+const player = new Player(); // Create a new player instance
 
 
 function play() {
@@ -256,34 +260,34 @@ function jumpSound() {
     // audio.play().catch(error => console.error("Playback error:", error));
 }
 
-
-function Water(x, y, direction) {
-    this.x = x;
-    this.y = y;
-    this.speed = 15;
-    this.size = 15;
-    this.direction = direction;
-    this.image = new Image();
-    this.image.src = 'waterBall.webp';
-    this.draw = function () {
+class Water {
+    constructor(x, y, direction) {
+        this.x = x;
+        this.y = y;
+        this.speed = 15;
+        this.size = 15;
+        this.direction = direction;
+        this.image = new Image();
+        this.image.src = 'waterBall.png';
+    }
+    draw () {
         ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
     }
-    this.collide = function (object) {
+    collide (object) {
         if (
             this.x < object.x + object.size &&
             this.x + this.size > object.x &&
             this.y + this.size > object.y &&
             this.y + this.size <= object.y + object.size
         ) {
-
             return true;
         }
-    },
-        this.die = function () {
-            this.y = -60;
-            this.speed = 0;
-        }
-    this.tick = function () {
+    }
+    die () {
+        this.y = -60;
+        this.speed = 0;
+    }
+    tick () {
         if (this.direction === "left") {
             this.x = this.x - this.speed;
         }
@@ -296,26 +300,28 @@ function Water(x, y, direction) {
         if (this.direction === "down") {
             this.y = this.y + this.speed;
         }
-
     }
 }
-function Fire(x, y) {
-    this.x = x;
-    this.y = y;
-    this.size = 30;
-    this.dead = false;
-    this.image = new Image();
-    this.image.src = 'fire.webp';
-    this.draw = function () {
+
+class Fire {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = 30;
+        this.dead = false;
+        this.image = new Image();
+        this.image.src = 'fire.webp';
+    }
+    draw() {
         ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
-    },
-        this.die = function () {
-            this.x = canvas.width + 20;
-            this.y = -20;
-            this.dead = true;
-            play();
-        }
-    this.playerCollide = function (player) {
+    }
+    die() {
+        this.x = canvas.width + 20;
+        this.y = -20;
+        this.dead = true;
+        play();
+    }
+    playerCollide(player) {
         if (
             this.x < player.x + player.size &&
             this.x + this.size > player.x &&
@@ -325,32 +331,33 @@ function Fire(x, y) {
             return true;
         }
     }
-    this.waterCollide = function (water) {
+    waterCollide(water) {
         if (
             this.x < water.x + water.size &&
             this.x + this.size > water.x &&
-            this.y + this.size > water.y &&
-            this.y + this.size <= water.y + water.size
+            this.y < water.y + water.size &&
+            this.y + this.size > water.y
         ) {
             this.die();
             water.collide();
         }
+}}
+
+class Platform {
+    constructor(x, y, width, length, color) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.length = length;
+        this.color = color;
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.length);
     }
 }
 
-function Platform(x, y, width, length, color, phaseable) {
-    this.x = x;
-    this.y = y;
-    this.phaseable = phaseable
-    this.width = width;
-    this.length = length;
-    this.color = color;
-    this.draw = function () {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.length);
-    };
-}
-objects.push(Player);
+objects.push(player);
 
 const height = 20
 const brown = '#964B00'; // Brown color for platforms
@@ -375,23 +382,23 @@ function gameLoop() {
 
     // Handle player movement
     if (keys['a']) {
-        Player.move(-Player.speed);
+        player.move(-player.speed);
     }
     if (keys['d']) {
-        Player.move(Player.speed);
+        player.move(player.speed);
     }
     if (keys['w']) {
-        Player.jump();
+        player.jump();
         jumpSound();
     }
 
     // Update and draw player
-    Player.update();
-    Player.draw();
+    player.update();
+    player.draw();
 
-    infoText.innerText = "Score: " + Player.score + "/" + targetScore + " Deaths: " + Player.deaths + ", A - Move left, D - Move right, W - Jump, Space - Switch Element, Arrow Keys - Use Element Ability";
-    if (Player.y >= canvas.getAttribute("height")) {
-        Player.die();
+    infoText.innerText = "Score: " + player.score + "/" + targetScore + " Deaths: " + player.deaths + ", A - Move left, D - Move right, W - Jump, Space - Switch Element, Arrow Keys - Use Element Ability";
+    if (player.y >= canvas.getAttribute("height")) {
+        player.die();
     }
 
     // Draw platforms
@@ -404,22 +411,22 @@ function gameLoop() {
         if (!fire.dead) {
             fire.draw();
         }
-        if (fire.playerCollide(Player) && Player.damageable) {
-            Player.die();
+        if (fire.playerCollide(player) && player.damageable) {
+            player.die();
         }
     }
-    if (Player.x >= canvas.getAttribute("width")) {
+    if (player.x >= canvas.getAttribute("width")) {
 
-        offset += Player.speed;
+        offset += player.speed;
         for (const object of objects) {
-            object.x -= Player.speed;
+            object.x -= player.speed;
         }
     }
-    if (Player.x <= 0) {
+    if (player.x <= 0) {
 
-        offset -= Player.speed;
+        offset -= player.speed;
         for (const object of objects) {
-            object.x += Player.speed;
+            object.x += player.speed;
         }
     }
     // Handle water projectiles
@@ -435,7 +442,7 @@ function gameLoop() {
                 if (water.collide(fire)) {
                     water.die();
                     deleteFromArray(water, waterProjectiles);
-                    Player.score += 1;
+                    player.score += 1;
                     fire.die();
                     deleteFromArray(fire, fires);
                 }
@@ -468,7 +475,7 @@ function gameLoop() {
     ctx.fillStyle = textColor;
     ctx.font = "20px Arial";
     ctx.fillText("Level " + currentLevel, 10, 20);
-    switch (Player.elementIndex) {
+    switch (player.elementIndex) {
         case 0:
             var elementName = "Water";
             break;
@@ -484,8 +491,8 @@ function gameLoop() {
 
     }
     ctx.fillText("Current Element: " + elementName, canvas.width-250, 20);
-    if (elements[Player.elementIndex].hasCooldown) {
-        if (elements[Player.elementIndex].enabled) {
+    if (elements[player.elementIndex].hasCooldown) {
+        if (elements[player.elementIndex].enabled) {
             ctx.fillStyle = 'green';
             ctx.fillText("Status: Ready", canvas.width - 250, 40);
         }
@@ -494,14 +501,14 @@ function gameLoop() {
             ctx.fillText("Status: Recharging", canvas.width - 250, 40);
         }
     }
-    if (Player.score >= targetScore) {
+    if (player.score >= targetScore) {
         ctx.fillStyle = '#88E788';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = 'black';
         ctx.font = "50px Arial";
         ctx.fillText("You win!", canvas.width / 2 - 200, canvas.height / 2);
         ctx.fillText("Press F5 to play again", canvas.width / 2 - 200, canvas.height / 2 + 50);
-        ctx.fillText("Points: " + Player.score + "/" + targetScore + " Deaths: " + Player.deaths, canvas.width / 2 - 200, canvas.height / 2 + 100);
+        ctx.fillText("Points: " + player.score + "/" + targetScore + " Deaths: " + player.deaths, canvas.width / 2 - 200, canvas.height / 2 + 100);
         ctx.font = "20px Arial";
         ctx.fillText("These dangerous forest fires that you just put out occur all over the world, claiming lives and homes every time they happen.", canvas.width / 2 - 600, canvas.height / 2 + 150);
         ctx.fillText("We need to push for more preventative measures for these catastrophies in order to eliminate or mitigate the damages from wildfires.", canvas.width / 2 - 600, canvas.height / 2 + 180);
@@ -509,37 +516,47 @@ function gameLoop() {
         ctx.fillText("Combatting global warming will not be easy, but we must work together to prevent this impending doom that is knocking on our door.", canvas.width / 2 - 600, canvas.height / 2 + 240);
 
     }
-    requestAnimationFrame(gameLoop);
 }
+
+// Set the game loop to run at 60 frames per second
+function startGameLoop() {
+    const tickRate = 1000 / 60; // 60 frames per second
+    setInterval(gameLoop, tickRate);
+}
+
+// Start the game loop
+BGImage.onload = function () {
+    startGameLoop();
+};
 
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
-    elements[Player.elementIndex].ability(event.key);
+    elements[player.elementIndex].ability(event.key);
     if (event.key === ' ') {
-        Player.elementIndex += 1;
-        if (Player.elementIndex >= elements.length) {
-            Player.elementIndex = 0;
+        player.elementIndex += 1;
+        if (player.elementIndex >= elements.length) {
+            player.elementIndex = 0;
         }
     }
     switch (event.key){
         case ' ':
-            Player.elementIndex += 1;
-            if (Player.elementIndex >= elements.length) {
-                Player.elementIndex = 0;
+            player.elementIndex += 1;
+            if (player.elementIndex >= elements.length) {
+                player.elementIndex = 0;
             }
             break;
         case '1':
-            Player.elementIndex= 0;
+            player.elementIndex= 0;
             break;
         case '2':
-            Player.elementIndex= 1;
+            player.elementIndex= 1;
             break;
         case '3':
-            Player.elementIndex= 2;
+            player.elementIndex= 2;
             break;
         // case '4':
-        //     Player.elementIndex= 3;
+        //     player.elementIndex= 3;
         //     break;
     }
 });
@@ -547,11 +564,6 @@ document.addEventListener('keydown', (event) => {
 document.addEventListener('keyup', (event) => {
     keys[event.key] = false;
 });
-
-// Start the game loop
-BGImage.onload = function () {
-    gameLoop();
-};
 
 function startLevel(level) {
     // Set the current level globally
@@ -631,7 +643,7 @@ function startLevel(level) {
     }
     // Update target score to match the number of fires
     targetScore = fires.length; // Dynamically set targetScore here
-
+    
     // Start the game loop
     gameLoop();
 }
