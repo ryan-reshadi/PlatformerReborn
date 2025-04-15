@@ -520,7 +520,7 @@ function startLevel(level) {
     if (level === 1) {
         platforms.push(new Platform(50, 200, 200, height, brown));
         platforms.push(new Platform(250, 400, 75, height, brown));
-        platforms.push(new Platform(225, 125, 200, 75, brown));
+        platforms.push(new Platform(225, 145, 200, 75, brown));
         fires.push(new Fire(100, 150));
         fires.push(new Fire(200, 300));
     } else if (level === 2) {
@@ -534,6 +534,7 @@ function startLevel(level) {
         platforms.push(new Platform(50, 600, 300, height, brown));
         platforms.push(new Platform(400, 500, 150, height, brown));
         platforms.push(new Platform(700, 300, 100, height, brown));
+        platforms.push (new Platform(100,200,100,50,brown));
         fires.push(new Fire(60, 550));
         fires.push(new Fire(450, 450));
         fires.push(new Fire(750, 250));
