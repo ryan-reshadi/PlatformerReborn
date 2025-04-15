@@ -62,17 +62,47 @@ class Element {
 
 const lightningAbilityFunction = (key) => {
     var activated = true;
+    let newX = Player.x;
+    let newY = Player.y;
+    let blinkDistance = 150; // Maximum distance to teleport
+    const step = 10; // Step size for incremental teleportation
+
     if (key === 'ArrowRight') {
-        Player.x += 100; // Blink right
+        for (let i = 0; i <= blinkDistance; i += step) {
+            const testX = Player.x + i;
+            const isColliding = platforms.some(platform => {
+                const isAbovePlatform = newY + Player.size <= platform.y;
+                const isBelowPlatform = newY >= platform.y + platform.length;
+                const isLeftOfPlatform = testX + Player.size <= platform.x;
+                const isRightOfPlatform = testX >= platform.x + platform.width;
+
+                return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
+            });
+            if (isColliding) break;
+            newX = testX;
+        }
     } else if (key === 'ArrowLeft') {
-        Player.x -= 100; // Blink left
-    // } else if (key === 'ArrowUp') {
-    //     Player.y -= 100; // Blink up
-    // } else if (key === 'ArrowDown') {
-    //     Player.y += 100; // Blink down
+        for (let i = 0; i <= blinkDistance; i += step) {
+            const testX = Player.x - i;
+            const isColliding = platforms.some(platform => {
+                const isAbovePlatform = newY + Player.size <= platform.y;
+                const isBelowPlatform = newY >= platform.y + platform.length;
+                const isLeftOfPlatform = testX + Player.size <= platform.x;
+                const isRightOfPlatform = testX >= platform.x + platform.width;
+
+                return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
+            });
+            if (isColliding) break;
+            newX = testX;
+        }
     } else {
         activated = false;
     }
+
+    // Update player position
+    Player.x = newX;
+    Player.y = newY;
+
     return activated;
 };
 const waterAbilityFunction = (key) => {
@@ -106,7 +136,7 @@ const waterAbilityFunction = (key) => {
 }
 const windAbilityFunction = (key) => {
     var activated = false;
-    if (key === "ArrowUp" && !Player.onGround){
+    if (key === "ArrowUp" || key === "W" && !Player.onGround){
         Player.velocityY = -10; // Jump
         activated = true;
     }
@@ -491,6 +521,26 @@ document.addEventListener('keydown', (event) => {
         if (Player.elementIndex >= elements.length) {
             Player.elementIndex = 0;
         }
+    }
+    switch (event.key){
+        case ' ':
+            Player.elementIndex += 1;
+            if (Player.elementIndex >= elements.length) {
+                Player.elementIndex = 0;
+            }
+            break;
+        case '1':
+            Player.elementIndex= 0;
+            break;
+        case '2':
+            Player.elementIndex= 1;
+            break;
+        case '3':
+            Player.elementIndex= 2;
+            break;
+        // case '4':
+        //     Player.elementIndex= 3;
+        //     break;
     }
 });
 
