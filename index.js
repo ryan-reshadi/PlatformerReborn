@@ -22,32 +22,75 @@ const deleteFromArray = function (target, array) {
 } // Function to delete an element from an array, used for waterBall elements
 
 class Element {
-    constructor(abilityFunction, cooldown = 0){
+    constructor(abilityFunction, cooldown = 0) {
         this.enabled = true;
         this.abilityFunction = abilityFunction;
-        if (cooldown === 0){
+        if (cooldown === 0) {
             this.hasCooldown = false;
         }
-        else{
-            this.hasCooldown= true;
+        else {
+            this.hasCooldown = true;
             this.cooldown = cooldown;
         }
+        // if (duration === 0){
+        //     this.hasDuration = false;
+        // }
+        // else{
+        //     this.hasDuration= true;
+        //     this.duration = duration;
+        // }
     }
-    ability(key){
-        if (this.enabled) {; // Check if the ability is on cooldown   
-        if (this.abilityFunction(key) && this.hasCooldown){
-            this.enabled = false;
-            this.#timerStart();
+    ability(key) {
+        if (this.enabled) {
+            ; // Check if the ability is on cooldown   
+            if (this.abilityFunction(key) && this.hasCooldown) { //this line checks if the ability has a cooldown, but due to the nature of the "abilityFunction" methods, the check of the return will also run the ability, making sure that if the ability doesn't have a cooldown, the ability is still ran while also negating the cooldown check
+                this.enabled = false;
+                this.cooldownTimerStart();
+            }
         }
     }
-    }
-    #timerStart() {
+    cooldownTimerStart() {
         this.enabled = false;
         setTimeout(() => {
             this.enabled = true;
         }, this.cooldown);
     }
 }
+
+class DurationElement extends Element {
+    constructor(activateAbilityFunction, deactivateAbilityFunction, cooldown = 0, duration = 0) {
+        super(activateAbilityFunction, cooldown);
+        this.deactivateAbilityFunction = deactivateAbilityFunction;
+        this.active = false;
+        if (duration === 0) {
+            this.hasDuration = false;
+        }
+        else {
+            this.hasDuration = true;
+            this.duration = duration;
+        }
+    }
+    ability(key) {
+        if (this.enabled) {
+            ; // Check if the ability is on cooldown   
+            if (this.abilityFunction(key) && this.hasCooldown) {
+                this.enabled = false;
+                if (this.hasDuration) {
+                    this.active = true;
+                    this.durationTimerStart(key);
+                }
+            }
+        }
+    }
+    durationTimerStart(key) {
+        setTimeout(() => {
+            this.cooldownTimerStart();
+            this.deactivateAbilityFunction(key);
+            this.active = false;
+        }, this.duration);
+    }
+}
+
 // class LightningElement extends Element {
 //     constructor(abilityFunction={},cooldown = 0){
 //         super(abilityFunction,cooldown);
@@ -136,20 +179,43 @@ const waterAbilityFunction = (key) => {
 }
 const windAbilityFunction = (key) => {
     var activated = false;
-    if (key === "ArrowUp" || key === "W" && !player.onGround){
+    if (key === "ArrowUp" || key === "W" && !player.onGround) {
         player.velocityY = -10; // Jump
         activated = true;
     }
     return activated;
 }
-const lightningElement = new Element(lightningAbilityFunction,1000); // 1-second cooldown
+const ghostAbilityFunction = (key) => {
+    var activated = false;
+    if (key === "ArrowUp") {
+        player.phaseable = true;
+        activated = true;
+    }
+    return activated;
+}
+const ghostAbilityDeactivateFunction = () => {
+    player.phaseable = false;
+}
+const lightningElement = new Element(lightningAbilityFunction, 1000); // 1-second cooldown
 const waterElement = new Element(waterAbilityFunction);
-const windElement = new Element(windAbilityFunction,1000); // 1-second cooldown
-const elements = [waterElement, lightningElement, windElement];
-class Player {
+const windElement = new Element(windAbilityFunction, 1000); // 1-second cooldown
+const ghostElement = new DurationElement(ghostAbilityFunction, ghostAbilityDeactivateFunction, 1000, 2000); // 2-second duration, 1 second cooldown
+const elements = [waterElement, lightningElement, windElement, ghostElement];
+class VisibleObject {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        // this.size = size;
+    }
+    adjustOffset(dx) {
+        this.x += dx;
+    }
+}
+class Player extends VisibleObject {
     constructor() {
-        this.x = 40;
-        this.y = 20;
+        super(40, 20); // Call the parent constructor with initial position and size
+        // this.x = 40;
+        // this.y = 20;
         this.size = 20;
         this.speed = 5;
         this.velocityY = 0; // Vertical velocity
@@ -157,11 +223,12 @@ class Player {
         this.onGround = false;
         this.direction = "up";
         this.damageable = true;
-        this.deaths= -1;
-        this.elementIndex= 0;
+        this.deaths = -1;
+        this.elementIndex = 0;
+        this.phaseable = false;
     }
     die() {
-        for (i of objects) {
+        for (var i of objects) {
             i.x += offset;
         }
         offset = 0;
@@ -188,51 +255,56 @@ class Player {
             const isRightOfPlatform = this.x >= platform.x + platform.width;
 
             // Check if hitting the platform from above
-            if (
-                !isBelowPlatform &&
-                !isLeftOfPlatform &&
-                !isRightOfPlatform &&
-                this.velocityY >= 0 && // Ensure the player is moving downward or stationary
-                this.y + this.size > platform.y && // Ensure the player is overlapping the platform
-                this.y < platform.y // Ensure the player is above the platform
-            ) {
-                this.y = platform.y - this.size; // Place player on top of the platform
-                this.velocityY = 0; // Stop falling
-                this.onGround = true;
-                break;
+            if (platform.phaseable && this.phaseable) {
+                // Skip collision check for phaseable platforms
             }
+            else {
+                if (
+                    !isBelowPlatform &&
+                    !isLeftOfPlatform &&
+                    !isRightOfPlatform &&
+                    this.velocityY >= 0 && // Ensure the player is moving downward or stationary
+                    this.y + this.size > platform.y && // Ensure the player is overlapping the platform
+                    this.y < platform.y // Ensure the player is above the platform
+                ) {
+                    this.y = platform.y - this.size; // Place player on top of the platform
+                    this.velocityY = 0; // Stop falling
+                    this.onGround = true;
+                    break;
+                }
 
-            // Check if hitting the platform from below
-            if (
-                !isAbovePlatform &&
-                !isLeftOfPlatform &&
-                !isRightOfPlatform &&
-                this.velocityY < 0 && // Ensure the player is moving upward
-                this.y + this.size > platform.y && // Ensure the player is overlapping the platform
-                this.y <= platform.y + platform.length // Ensure the player is below the platform
-            ) {
-                this.y = platform.y + platform.length; // Push player below the platform
-                this.velocityY = 0; // Stop upward movement
-            }
+                // Check if hitting the platform from below
+                if (
+                    !isAbovePlatform &&
+                    !isLeftOfPlatform &&
+                    !isRightOfPlatform &&
+                    this.velocityY < 0 && // Ensure the player is moving upward
+                    this.y + this.size > platform.y && // Ensure the player is overlapping the platform
+                    this.y <= platform.y + platform.length // Ensure the player is below the platform
+                ) {
+                    this.y = platform.y + platform.length; // Push player below the platform
+                    this.velocityY = 0; // Stop upward movement
+                }
 
-            // Check if hitting the platform from the left
-            if (
-                !isAbovePlatform &&
-                !isBelowPlatform &&
-                this.x + this.size > platform.x &&
-                this.x < platform.x
-            ) {
-                this.x = platform.x - this.size; // Push player to the left of the platform
-            }
+                // Check if hitting the platform from the left
+                if (
+                    !isAbovePlatform &&
+                    !isBelowPlatform &&
+                    this.x + this.size > platform.x &&
+                    this.x < platform.x
+                ) {
+                    this.x = platform.x - this.size; // Push player to the left of the platform
+                }
 
-            // Check if hitting the platform from the right
-            if (
-                !isAbovePlatform &&
-                !isBelowPlatform &&
-                this.x < platform.x + platform.width &&
-                this.x + this.size > platform.x + platform.width
-            ) {
-                this.x = platform.x + platform.width; // Push player to the right of the platform
+                // Check if hitting the platform from the right
+                if (
+                    !isAbovePlatform &&
+                    !isBelowPlatform &&
+                    this.x < platform.x + platform.width &&
+                    this.x + this.size > platform.x + platform.width
+                ) {
+                    this.x = platform.x + platform.width; // Push player to the right of the platform
+                }
             }
         }
     }
@@ -260,20 +332,21 @@ function jumpSound() {
     // audio.play().catch(error => console.error("Playback error:", error));
 }
 
-class Water {
+class Water extends VisibleObject {
     constructor(x, y, direction) {
-        this.x = x;
-        this.y = y;
-        this.speed = 15;
+        super(x, y); // Call the parent constructor with initial position and size
+        // this.x = x;
+        // this.y = y;
         this.size = 15;
+        this.speed = 15;
         this.direction = direction;
         this.image = new Image();
         this.image.src = 'waterBall.png';
     }
-    draw () {
+    draw() {
         ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
     }
-    collide (object) {
+    collide(object) {
         if (
             this.x < object.x + object.size &&
             this.x + this.size > object.x &&
@@ -282,12 +355,13 @@ class Water {
         ) {
             return true;
         }
+        return false;
     }
-    die () {
+    die() {
         this.y = -60;
         this.speed = 0;
     }
-    tick () {
+    tick() {
         if (this.direction === "left") {
             this.x = this.x - this.speed;
         }
@@ -301,12 +375,14 @@ class Water {
             this.y = this.y + this.speed;
         }
     }
+    
 }
 
-class Fire {
+class Fire extends VisibleObject {
     constructor(x, y) {
-        this.x = x;
-        this.y = y;
+        super(x, y); // Call the parent constructor with initial position and size
+        // this.x = x;
+        // this.y = y;
         this.size = 30;
         this.dead = false;
         this.image = new Image();
@@ -341,22 +417,52 @@ class Fire {
             this.die();
             water.collide();
         }
-}}
+    }
+}
 
-class Platform {
-    constructor(x, y, width, length, color) {
+class Platform extends VisibleObject {
+    constructor(x, y, width, length, color, phaseable = false) {
+        super(x,y);
         this.x = x;
         this.y = y;
         this.width = width;
         this.length = length;
         this.color = color;
+        this.phaseable = phaseable;
     }
     draw() {
-        ctx.fillStyle = this.color;
+        if (this.phaseable && player.phaseable) {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; // Semi-transparent red for phaseable platforms
+        }
+        else {
+            ctx.fillStyle = this.color;
+        }
         ctx.fillRect(this.x, this.y, this.width, this.length);
     }
+    
 }
 
+class MovingPlatform extends Platform {
+    constructor(x, y, width, length, color, Xspeed, Yspeed, XLowerBound, XUpperBound, YLowerBound, YUpperBound) {
+        super(x, y, width, length, color);
+        this.Xspeed = Xspeed;
+        this.Yspeed = Yspeed;
+        this.XLowerBound = XLowerBound;
+        this.XUpperBound = XUpperBound;
+        this.YLowerBound = YLowerBound;
+        this.YUpperBound = YUpperBound;
+    }
+    update() {
+        this.x += this.Xspeed;
+        this.y += this.Yspeed;
+        if (this.x <= this.XLowerBound || this.x >= this.XUpperBound) {
+            this.Xspeed = -this.Xspeed; // Reverse direction on X-axis
+        }
+        if (this.y <= this.YLowerBound || this.y >= this.YUpperBound) {
+            this.Yspeed = -this.Yspeed; // Reverse direction on Y-axis
+        }
+    }
+}
 objects.push(player);
 
 const height = 20
@@ -364,7 +470,7 @@ const brown = '#964B00'; // Brown color for platforms
 const BGImage = new Image(1400, 850);
 BGImage.src = 'forest.webp';
 
-let currentLevel = 1; // Define a global variable to track the current level
+var currentLevel = 1; // Define a global variable to track the current level
 
 // Ensure the title screen is displayed on page load
 window.onload = function () {
@@ -378,7 +484,7 @@ function gameLoop() {
 
     // Draw background
     ctx.drawImage(BGImage, 0, 0, 1400, 850);
-    
+
 
     // Handle player movement
     if (keys['a']) {
@@ -419,38 +525,47 @@ function gameLoop() {
 
         offset += player.speed;
         for (const object of objects) {
-            object.x -= player.speed;
+            // object.x -= player.speed;
+            object.adjustOffset(-player.speed);
         }
     }
     if (player.x <= 0) {
 
         offset -= player.speed;
         for (const object of objects) {
-            object.x += player.speed;
+            // object.x += player.speed;
+            object.adjustOffset(player.speed);
         }
     }
     // Handle water projectiles
-    for (const water of waterProjectiles) {
-        if (this.y < 0 || this.y > canvas.getAttribute("height") || this.x < 0 || this.x > canvas.getAttribute("width")) {
-            this.die();
-            deleteFromArray(water, waterProjectiles);
-        }
-        else {
+    for (let i = waterProjectiles.length - 1; i >= 0; i--) {
+        const water = waterProjectiles[i];
+        if (water.y < 0 || water.y > canvas.height || water.x < 0 || water.x > canvas.width) {
+            water.die();
+            waterProjectiles.splice(i, 1); // Remove the water projectile
+        } else {
             water.draw();
             water.tick();
             for (const fire of fires) {
                 if (water.collide(fire)) {
                     water.die();
-                    deleteFromArray(water, waterProjectiles);
+                    waterProjectiles.splice(i, 1); // Remove the water projectile
                     player.score += 1;
                     fire.die();
                     deleteFromArray(fire, fires);
+                    break;
                 }
             }
             for (const platform of platforms) {
-                if (water.collide(platform)) {
+                if (
+                    water.x + water.size > platform.x &&
+                    water.x < platform.x + platform.width &&
+                    water.y + water.size > platform.y &&
+                    water.y < platform.y + platform.length
+                ) {
                     water.die();
-                    deleteFromArray(water, waterProjectiles);
+                    waterProjectiles.splice(i, 1); // Remove the water projectile
+                    break;
                 }
             }
         }
@@ -485,12 +600,15 @@ function gameLoop() {
         case 2:
             var elementName = "Wind";
             break;
+        case 3:
+            var elementName = "Ghost";
+            break;
         default:
             var elementName = "Unknown Element";
             break;
 
     }
-    ctx.fillText("Current Element: " + elementName, canvas.width-250, 20);
+    ctx.fillText("Current Element: " + elementName, canvas.width - 250, 20);
     if (elements[player.elementIndex].hasCooldown) {
         if (elements[player.elementIndex].enabled) {
             ctx.fillStyle = 'green';
@@ -499,6 +617,16 @@ function gameLoop() {
         else {
             ctx.fillStyle = 'red';
             ctx.fillText("Status: Recharging", canvas.width - 250, 40);
+        }
+    }
+    if (elements[player.elementIndex].hasDuration) {
+        if (elements[player.elementIndex].active) {
+            ctx.fillStyle = 'green';
+            ctx.fillText("Status: Active", canvas.width - 250, 60);
+        }
+        else {
+            ctx.fillStyle = 'red';
+            ctx.fillText("Status: Inactive", canvas.width - 250, 60);
         }
     }
     if (player.score >= targetScore) {
@@ -533,13 +661,8 @@ BGImage.onload = function () {
 document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
     elements[player.elementIndex].ability(event.key);
-    if (event.key === ' ') {
-        player.elementIndex += 1;
-        if (player.elementIndex >= elements.length) {
-            player.elementIndex = 0;
-        }
-    }
-    switch (event.key){
+
+    switch (event.key) {
         case ' ':
             player.elementIndex += 1;
             if (player.elementIndex >= elements.length) {
@@ -547,17 +670,17 @@ document.addEventListener('keydown', (event) => {
             }
             break;
         case '1':
-            player.elementIndex= 0;
+            player.elementIndex = 0;
             break;
         case '2':
-            player.elementIndex= 1;
+            player.elementIndex = 1;
             break;
         case '3':
-            player.elementIndex= 2;
+            player.elementIndex = 2;
             break;
-        // case '4':
-        //     player.elementIndex= 3;
-        //     break;
+        case '4':
+            player.elementIndex = 3;
+            break;
     }
 });
 
@@ -616,6 +739,7 @@ function startLevel(level) {
         platforms.push(new Platform(800, 670, 70, height, brown));
         // Elevator
         platforms.push(new Platform(1070, 670, 150, height, brown));
+        platforms.push(new Platform(250, 125, 20, height * 4, brown, true)); // tall wall
 
         for (let i = 90; i <= 90 * 4; i = i + 90) {
             platforms.push(new Platform(1100, 670 - i, 110, height, brown));
@@ -643,7 +767,7 @@ function startLevel(level) {
     }
     // Update target score to match the number of fires
     targetScore = fires.length; // Dynamically set targetScore here
-    
+
     // Start the game loop
     gameLoop();
 }
