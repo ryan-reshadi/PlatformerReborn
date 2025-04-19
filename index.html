@@ -15,25 +15,13 @@
         <button onclick="startLevel(3)">Level 3</button>
         <button onclick="startLevel(4)">Level 4</button>
 
-        <button onclick = "alert(
-            'Instructions: \n' +
-            'Use A to move left, D to move right, W to jump. \n' +
-            'Press Space or number keys to cycle through elements \n' +
-            'Use the arrow keys to use abilities. \n \n' +
-            'Ability info: \n' +
-            'Wind: press up arrow in mid air to double jump \n' +
-            'Water: use arrow keys to shoot water projectiles in different directions \n' +
-            'Lightning: press left or right arrow keys to blink in that direction \n' +
-            'Ghost: press up arrow to phase through specific walls for a short time'
-        )">Instructions/Info</button>
+        <button onclick = "instructionAlert()">Instructions/Info</button>
     </div>
-    <canvas id="myCanvas" width="1400" height="750" style="border:1px solid black; display: none;">
+    <canvas id="myCanvas" width="1400" height="700" style="border:1px solid black; display: none;">
     </canvas>
-    <main>
-    </main> 
     <footer>
-        <p id="infoText" style="display: none;">Score: , A - Move left, D - Move right, W - Jump, Arrow Keys - use abilities </p>
-        <p id="controlText2"></p>
+        <!-- <p id="infoText" style="display: none;">Score: , A - Move left, D - Move right, W - Jump, Arrow Keys - use abilities </p> -->
+        
     </footer>
     <script src="index.js"></script>
 </body>

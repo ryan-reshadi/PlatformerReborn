@@ -7,6 +7,8 @@ const gravity = 0.4; // Gravity force
 const platforms = []; // Array to hold platforms
 const fires = []; //array to hold fires
 var offset = 0; //tracks objects offset
+const lightningSpriteImg = new Image();
+lightningSpriteImg.src = 'lightning-removebg-preview.png'; // Path to your lightning image
 //const fireCrackles = new Audio("./fireCrackle.mp3");
 
 //const pouringWater = new Audio("./pouringWater.mp3");
@@ -20,7 +22,19 @@ const deleteFromArray = function (target, array) {
     }
     return returnArray;
 } // Function to delete an element from an array, used for waterBall elements
-
+const instructionAlert = function () {
+    alert(
+        'Instructions: \n' +
+        'Use A to move left, D to move right, W to jump. \n' +
+        'Press Space or number keys to cycle through elements \n' +
+        'Use the arrow keys to use abilities. \n \n' +
+        'Ability info: \n' +
+        'Wind: press up arrow in mid air to double jump \n' +
+        'Water: use arrow keys to shoot water projectiles in different directions \n' +
+        'Lightning: press left or right arrow keys to blink in that direction \n' +
+        'Ghost: press up arrow to phase through specific walls for a short time'
+    )
+}
 class Element {
     constructor(abilityFunction, cooldown = 0) {
         this.enabled = true;
@@ -42,7 +56,6 @@ class Element {
     }
     ability(key) {
         if (this.enabled) {
-            ; // Check if the ability is on cooldown   
             if (this.abilityFunction(key) && this.hasCooldown) { //this line checks if the ability has a cooldown, but due to the nature of the "abilityFunction" methods, the check of the return will also run the ability, making sure that if the ability doesn't have a cooldown, the ability is still ran while also negating the cooldown check
                 this.enabled = false;
                 this.cooldownTimerStart();
@@ -109,7 +122,7 @@ const lightningAbilityFunction = (key) => {
     let newY = player.y;
     let blinkDistance = 150; // Maximum distance to teleport
     const step = 10; // Step size for incremental teleportation
-
+    let currentX = player.x;
     if (key === 'ArrowRight') {
         for (let i = 0; i <= blinkDistance; i += step) {
             const testX = player.x + i;
@@ -141,11 +154,20 @@ const lightningAbilityFunction = (key) => {
     } else {
         activated = false;
     }
+    if (activated){
+        const spriteWidth = (newX - player.x); // Width based on blink distance
+        const spriteHeight = player.size * 0.8; // Adjust height to 80% of the player's size
+
+        // Adjust the vertical position to align the image with the player
+        const spriteY = player.y + (player.size - spriteHeight) / 2;
+        // Ensure the image is drawn after it loads
+
+        ctx.drawImage(lightningSpriteImg, currentX + player.size, spriteY, spriteWidth, spriteHeight);
+    }
 
     // Update player position
     player.x = newX;
     player.y = newY;
-
     return activated;
 };
 const waterAbilityFunction = (key) => {
@@ -254,57 +276,67 @@ class Player extends VisibleObject {
             const isLeftOfPlatform = this.x + this.size <= platform.x;
             const isRightOfPlatform = this.x >= platform.x + platform.width;
 
-            // Check if hitting the platform from above
+            // Skip collision checks for phaseable platforms if the player is phaseable
             if (platform.phaseable && this.phaseable) {
-                // Skip collision check for phaseable platforms
+                continue;
             }
-            else {
-                if (
-                    !isBelowPlatform &&
-                    !isLeftOfPlatform &&
-                    !isRightOfPlatform &&
-                    this.velocityY >= 0 && // Ensure the player is moving downward or stationary
-                    this.y + this.size > platform.y && // Ensure the player is overlapping the platform
-                    this.y < platform.y // Ensure the player is above the platform
-                ) {
-                    this.y = platform.y - this.size; // Place player on top of the platform
-                    this.velocityY = 0; // Stop falling
-                    this.onGround = true;
-                    break;
-                }
 
-                // Check if hitting the platform from below
-                if (
-                    !isAbovePlatform &&
-                    !isLeftOfPlatform &&
-                    !isRightOfPlatform &&
-                    this.velocityY < 0 && // Ensure the player is moving upward
-                    this.y + this.size > platform.y && // Ensure the player is overlapping the platform
-                    this.y <= platform.y + platform.length // Ensure the player is below the platform
-                ) {
-                    this.y = platform.y + platform.length; // Push player below the platform
-                    this.velocityY = 0; // Stop upward movement
-                }
+            // Check if hitting the platform from above
+            if (
+                !isBelowPlatform &&
+                !isLeftOfPlatform &&
+                !isRightOfPlatform &&
+                this.velocityY >= 0 && // Ensure the player is moving downward or stationary
+                this.y + this.size > platform.y && // Ensure the player is overlapping the platform
+                this.y < platform.y // Ensure the player is above the platform
+            ) {
+                this.y = platform.y - this.size; // Place player on top of the platform
+                this.velocityY = 0; // Stop falling
+                this.onGround = true;
 
-                // Check if hitting the platform from the left
-                if (
-                    !isAbovePlatform &&
-                    !isBelowPlatform &&
-                    this.x + this.size > platform.x &&
-                    this.x < platform.x
-                ) {
-                    this.x = platform.x - this.size; // Push player to the left of the platform
+                // Move with the platform if it's a moving platform
+                if (platform instanceof MovingPlatform) {
+                    this.x += platform.Xspeed;
+                    this.y += platform.Yspeed;
                 }
+                break;
+            }
 
-                // Check if hitting the platform from the right
-                if (
-                    !isAbovePlatform &&
-                    !isBelowPlatform &&
-                    this.x < platform.x + platform.width &&
-                    this.x + this.size > platform.x + platform.width
-                ) {
-                    this.x = platform.x + platform.width; // Push player to the right of the platform
-                }
+            // Check if hitting the platform from below
+            if (
+                !isAbovePlatform &&
+                !isLeftOfPlatform &&
+                !isRightOfPlatform &&
+                this.velocityY < 0 && // Ensure the player is moving upward
+                this.y < platform.y + platform.length && // Ensure the player is overlapping the platform
+                this.y + this.size > platform.y // Ensure the player is below the platform
+            ) {
+                this.velocityY = 0; // Stop upward movement
+                break; // Prevent teleportation to the bottom of the platform
+            }
+
+            // Check if hitting the platform from the left
+            if (
+                !isAbovePlatform &&
+                !isBelowPlatform &&
+                this.x + this.size > platform.x &&
+                this.x < platform.x &&
+                this.y + this.size > platform.y && // Ensure the player is within the platform's vertical bounds
+                this.y < platform.y + platform.length
+            ) {
+                this.x = platform.x - this.size; // Push player to the left of the platform
+            }
+
+            // Check if hitting the platform from the right
+            if (
+                !isAbovePlatform &&
+                !isBelowPlatform &&
+                this.x < platform.x + platform.width &&
+                this.x + this.size > platform.x + platform.width &&
+                this.y + this.size > platform.y && // Ensure the player is within the platform's vertical bounds
+                this.y < platform.y + platform.length
+            ) {
+                this.x = platform.x + platform.width; // Push player to the right of the platform
             }
         }
     }
@@ -321,7 +353,6 @@ class Player extends VisibleObject {
 
 var targetScore = 0; // Set the target score to 0 initially
 const player = new Player(); // Create a new player instance
-
 
 function play() {
     let audio = new Audio('playerDeath.mp3');
@@ -375,7 +406,7 @@ class Water extends VisibleObject {
             this.y = this.y + this.speed;
         }
     }
-    
+
 }
 
 class Fire extends VisibleObject {
@@ -422,7 +453,7 @@ class Fire extends VisibleObject {
 
 class Platform extends VisibleObject {
     constructor(x, y, width, length, color, phaseable = false) {
-        super(x,y);
+        super(x, y);
         this.x = x;
         this.y = y;
         this.width = width;
@@ -439,11 +470,11 @@ class Platform extends VisibleObject {
         }
         ctx.fillRect(this.x, this.y, this.width, this.length);
     }
-    
+
 }
 
 class MovingPlatform extends Platform {
-    constructor(x, y, width, length, color, Xspeed, Yspeed, XLowerBound, XUpperBound, YLowerBound, YUpperBound) {
+    constructor(x, y, width, length, color, Xspeed, Yspeed, XLowerBound, YLowerBound, XUpperBound, YUpperBound) {
         super(x, y, width, length, color);
         this.Xspeed = Xspeed;
         this.Yspeed = Yspeed;
@@ -467,16 +498,14 @@ objects.push(player);
 
 const height = 20
 const brown = '#964B00'; // Brown color for platforms
+const red = '#FF0000'; // Red color for fire
 const BGImage = new Image(1400, 850);
 BGImage.src = 'forest.webp';
-
 var currentLevel = 1; // Define a global variable to track the current level
-
 // Ensure the title screen is displayed on page load
 window.onload = function () {
     document.getElementById('titleScreen').style.display = 'flex';
     canvas.style.display = 'none';
-    infoText.style.display = 'none';
 };
 
 function gameLoop() {
@@ -502,7 +531,6 @@ function gameLoop() {
     player.update();
     player.draw();
 
-    infoText.innerText = "Score: " + player.score + "/" + targetScore + " Deaths: " + player.deaths + ", A - Move left, D - Move right, W - Jump, Space - Switch Element, Arrow Keys - Use Element Ability";
     if (player.y >= canvas.getAttribute("height")) {
         player.die();
     }
@@ -510,6 +538,9 @@ function gameLoop() {
     // Draw platforms
     for (const platform of platforms) {
         platform.draw();
+        if (platform instanceof MovingPlatform) {
+            platform.update();
+        }
     }
 
     // Draw fires and check collisions
@@ -590,6 +621,9 @@ function gameLoop() {
     ctx.fillStyle = textColor;
     ctx.font = "20px Arial";
     ctx.fillText("Level " + currentLevel, 10, 20);
+    ctx.fillText("Score: " + player.score + "/" + targetScore, 10, canvas.height - 20);
+    ctx.fillText("Deaths: " + player.deaths, 10, canvas.height - 40);
+    ctx.fillText("Press I for instructions", 10, canvas.height - 60);
     switch (player.elementIndex) {
         case 0:
             var elementName = "Water";
@@ -669,6 +703,9 @@ document.addEventListener('keydown', (event) => {
                 player.elementIndex = 0;
             }
             break;
+        case "i":
+            instructionAlert();
+            break;
         case '1':
             player.elementIndex = 0;
             break;
@@ -695,7 +732,6 @@ function startLevel(level) {
     // Hide the title screen and show the game canvas
     document.getElementById('titleScreen').style.display = 'none';
     canvas.style.display = 'block';
-    infoText.style.display = 'block';
 
     // Clear existing platforms and fires
     platforms.length = 0;
@@ -706,15 +742,13 @@ function startLevel(level) {
         platforms.push(new Platform(50, 200, 200, height, brown));
         platforms.push(new Platform(250, 400, 75, height, brown));
         platforms.push(new Platform(225, 125, 200, 75, brown));
+        platforms.push(new MovingPlatform(400, 500, 100, height, red, 3, 3, 400, 500, 600, 700)); // Moving platform
         fires.push(new Fire(100, 150));
         fires.push(new Fire(200, 300));
     } else if (level === 2) {
-        platforms.push(new Platform(100, 300, 150, height, brown));
-        platforms.push(new Platform(400, 500, 100, height, brown));
-        platforms.push(new Platform(700, 400, 200, height, brown));
-        fires.push(new Fire(150, 250));
-        fires.push(new Fire(450, 450));
-        fires.push(new Fire(750, 350));
+        fires.push(new Fire(100, 150));
+        platforms.push(new Platform(50, 400, 200, height, brown));
+        platforms.push(new Platform(250, 200, 75, height, brown));
     } else if (level === 3) {
         platforms.push(new Platform(50, 600, 300, height, brown));
         platforms.push(new Platform(400, 500, 150, height, brown));
@@ -739,7 +773,7 @@ function startLevel(level) {
         platforms.push(new Platform(800, 670, 70, height, brown));
         // Elevator
         platforms.push(new Platform(1070, 670, 150, height, brown));
-        platforms.push(new Platform(250, 125, 20, height * 4, brown, true)); // tall wall
+        platforms.push(new Platform(250, 125, 20, height * 6, brown, true)); // tall wall
 
         for (let i = 90; i <= 90 * 4; i = i + 90) {
             platforms.push(new Platform(1100, 670 - i, 110, height, brown));
