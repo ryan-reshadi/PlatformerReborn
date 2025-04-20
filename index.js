@@ -48,23 +48,23 @@ class WaterElement extends Element {
     constructor() {
         super();
     }
-    ability(direction) {
+    abilityActivation(direction) {
         const water = new Water(player.x, player.y, direction);
         waterProjectiles.push(water);
     }
     keyChecker(key) {
         if (key === 'ArrowRight') {
-            this.ability("right");
+            this.abilityActivation("right");
         }
         if (key === 'ArrowLeft') {
-            this.ability("left");
+            this.abilityActivation("left");
         }
         if (key === 'ArrowUp') {
             // player.direction = "up";
-            this.ability("up");
+            this.abilityActivation("up");
         }
         if (key === "ArrowDown") {
-            this.ability("down");
+            this.abilityActivation("down");
         }
     }
 }
@@ -75,7 +75,7 @@ class CooldownElement extends Element {
         this.cooldownTimeRemaining = 0;
     }
     tick(key) {
-        if (cooldown <= 0) {
+        if (this.cooldown <= 0) {
             this.keyChecker(key);
         }
     }
@@ -87,19 +87,100 @@ class CooldownElement extends Element {
         }, 1);
     }
 }
+class WindElement extends CooldownElement {
+    constructor(cooldownTime) {
+        super(cooldownTime);
+    }
+    abilityActivation() {
+        player.velocityY = -10; // Jump
+    }
+    keyChecker(key) {
+        if (key === "ArrowUp" && !player.onGround) {
+            this.abilityActivation();
+        }
+    }
+}
 class DurationElement extends CooldownElement {
     constructor(cooldownTime, duration) {
         super(cooldownTime);
         this.duration = duration;
         this.durationRemaining = 0;
+        this.active = false;
     }
     tick(key){
         if (this.durationRemaining<=0 && this.cooldownTimeRemaining <= 0) {
             this.keyChecker(key);
         }
+        if (this.active && this.durationRemaining<=0) {
+            this.abilityDeactivation();
+            this.active = false;
+            this.cooldownTimerRestart();
+        }
     }
-    durationTimerStart(){}
-    
+    durationTimerStart(){
+        this.active = true;
+        setInterval(() => {
+            this.durationRemaining -= 1;
+        }, 1);
+    }
+    abilityDeactivation(){}
+}
+class LightningElement extends CooldownElement {
+    constructor(cooldownTime, blinkDistance) {
+        super(cooldownTime);
+        this.blinkDistance = blinkDistance;
+    }
+    abilityActivation(blinkDirection) {
+        let newX = player.x;
+        let newY = player.y;
+        const step = 10;
+        for (let i = 0; i <= blinkDistance; i += step) {
+            const testX = player.x + (blinkDirection * i);
+            const isColliding = platforms.some(platform => {
+                const isAbovePlatform = newY + player.size <= platform.y;
+                const isBelowPlatform = newY >= platform.y + platform.length;
+                const isLeftOfPlatform = testX + player.size <= platform.x;
+                const isRightOfPlatform = testX >= platform.x + platform.width;
+
+                return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
+            });
+            if (isColliding) break;
+            newX = testX;
+        }
+        const spriteWidth = (newX - player.x); // Width based on blink distance
+        const spriteHeight = player.size * 0.8; // Adjust height to 80% of the player's size
+
+        // Adjust the vertical position to align the image with the player
+        const spriteY = player.y + (player.size - spriteHeight) / 2;
+        // Ensure the image is drawn after it loads
+
+        ctx.drawImage(lightningSpriteImg, currentX + player.size, spriteY, spriteWidth, spriteHeight);
+    }
+    keyChecker(key) {
+        if (key === 'ArrowRight') {
+            this.abilityActivation(1);
+        }
+        if (key === 'ArrowLeft'){
+            this.abilityActivation(-1);
+        }
+    }
+}
+class GhostElement extends DurationElement {
+    constructor(cooldownTime, duration) {
+        super(cooldownTime, duration);
+    }
+    abilityActivation() {
+        player.phaseable = true;
+        this.durationTimerStart();
+    }
+    abilityDeactivation() {
+        player.phaseable = false;
+    }
+    keyChecker(key) {
+        if (key === "ArrowUp") {
+            this.abilityActivation();
+        }
+    }
 }
 
 // class LightningElement extends Element {
@@ -216,10 +297,10 @@ const ghostAbilityFunction = (key) => {
 const ghostAbilityDeactivateFunction = () => {
     player.phaseable = false;
 }
-const lightningElement = new Element(lightningAbilityFunction, 1000); // 1-second cooldown
-const waterElement = new Element(waterAbilityFunction);
-const windElement = new Element(windAbilityFunction, 1000); // 1-second cooldown
-const ghostElement = new DurationElement(ghostAbilityFunction, ghostAbilityDeactivateFunction, 1000, 2000); // 2-second duration, 1 second cooldown
+const lightningElement = new LightningElement(1000, 150); // 1-second cooldown, 150 px blink distance
+const waterElement = new WaterElement();
+const windElement = new WindElement(1000); // 1-second cooldown
+const ghostElement = new GhostElement(2000, 1000); // 2-second duration, 1 second cooldown
 const elements = [waterElement, lightningElement, windElement, ghostElement];
 class VisibleObject {
     constructor(x, y) {
