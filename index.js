@@ -36,72 +36,70 @@ const instructionAlert = function () {
     )
 }
 class Element {
-    constructor(abilityFunction, cooldown = 0) {
-        this.enabled = true;
-        this.abilityFunction = abilityFunction;
-        if (cooldown === 0) {
-            this.hasCooldown = false;
-        }
-        else {
-            this.hasCooldown = true;
-            this.cooldown = cooldown;
-        }
-        // if (duration === 0){
-        //     this.hasDuration = false;
-        // }
-        // else{
-        //     this.hasDuration= true;
-        //     this.duration = duration;
-        // }
+    constructor() { }
+    tick(key) {
+        this.keyChecker(key);
     }
-    ability(key) {
-        if (this.enabled) {
-            if (this.abilityFunction(key) && this.hasCooldown) { //this line checks if the ability has a cooldown, but due to the nature of the "abilityFunction" methods, the check of the return will also run the ability, making sure that if the ability doesn't have a cooldown, the ability is still ran while also negating the cooldown check
-                this.enabled = false;
-                this.cooldownTimerStart();
-            }
-        }
-    }
-    cooldownTimerStart() {
-        this.enabled = false;
-        setTimeout(() => {
-            this.enabled = true;
-        }, this.cooldown);
+    keyChecker(key) {
+
     }
 }
+class WaterElement extends Element {
+    constructor() {
+        super();
+    }
+    ability(direction) {
+        const water = new Water(player.x, player.y, direction);
+        waterProjectiles.push(water);
+    }
+    keyChecker(key) {
+        if (key === 'ArrowRight') {
+            this.ability("right");
+        }
+        if (key === 'ArrowLeft') {
+            this.ability("left");
+        }
+        if (key === 'ArrowUp') {
+            // player.direction = "up";
+            this.ability("up");
+        }
+        if (key === "ArrowDown") {
+            this.ability("down");
+        }
+    }
+}
+class CooldownElement extends Element {
+    constructor(cooldownTime) {
+        super();
+        this.cooldownTime = cooldownTime;
+        this.cooldownTimeRemaining = 0;
+    }
+    tick(key) {
+        if (cooldown <= 0) {
+            this.keyChecker(key);
+        }
+    }
 
-class DurationElement extends Element {
-    constructor(activateAbilityFunction, deactivateAbilityFunction, cooldown = 0, duration = 0) {
-        super(activateAbilityFunction, cooldown);
-        this.deactivateAbilityFunction = deactivateAbilityFunction;
-        this.active = false;
-        if (duration === 0) {
-            this.hasDuration = false;
-        }
-        else {
-            this.hasDuration = true;
-            this.duration = duration;
-        }
+    cooldownTimerRestart() {
+        this.cooldownTimeRemaining = this.cooldownTime;
+        setInterval(() => {
+            this.cooldownTimeRemaining -= 1;
+        }, 1);
     }
-    ability(key) {
-        if (this.enabled) {
-            ; // Check if the ability is on cooldown   
-            if (this.abilityFunction(key) && this.hasCooldown) {
-                this.enabled = false;
-                if (this.hasDuration) {
-                    this.active = true;
-                    this.durationTimerStart(key);
-                }
-            }
+}
+class DurationElement extends CooldownElement {
+    constructor(cooldownTime, duration) {
+        super(cooldownTime);
+        this.duration = duration;
+        this.durationRemaining = 0;
+    }
+    tick(key){
+        if (this.durationRemaining<=0 && this.cooldownTimeRemaining <= 0) {
+            this.keyChecker(key);
         }
     }
-    durationTimerStart(key) {
-        setTimeout(() => {
-            this.cooldownTimerStart();
-            this.deactivateAbilityFunction(key);
-            this.active = false;
-        }, this.duration);
-    }
+    durationTimerStart(){}
+    
 }
 
 // class LightningElement extends Element {
@@ -154,7 +152,7 @@ const lightningAbilityFunction = (key) => {
     } else {
         activated = false;
     }
-    if (activated){
+    if (activated) {
         const spriteWidth = (newX - player.x); // Width based on blink distance
         const spriteHeight = player.size * 0.8; // Adjust height to 80% of the player's size
 
@@ -694,7 +692,7 @@ BGImage.onload = function () {
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
-    elements[player.elementIndex].ability(event.key);
+    elements[player.elementIndex].tick(event.key);
 
     switch (event.key) {
         case ' ':
