@@ -35,194 +35,7 @@ const instructionAlert = function () {
         'Ghost: press up arrow to phase through specific walls for a short time'
     )
 }
-class Element {
-    constructor(abilityFunction, cooldown = 0) {
-        this.enabled = true;
-        this.abilityFunction = abilityFunction;
-        if (cooldown === 0) {
-            this.hasCooldown = false;
-        }
-        else {
-            this.hasCooldown = true;
-            this.cooldown = cooldown;
-        }
-        // if (duration === 0){
-        //     this.hasDuration = false;
-        // }
-        // else{
-        //     this.hasDuration= true;
-        //     this.duration = duration;
-        // }
-    }
-    ability(key) {
-        if (this.enabled) {
-            if (this.abilityFunction(key) && this.hasCooldown) { //this line checks if the ability has a cooldown, but due to the nature of the "abilityFunction" methods, the check of the return will also run the ability, making sure that if the ability doesn't have a cooldown, the ability is still ran while also negating the cooldown check
-                this.enabled = false;
-                this.cooldownTimerStart();
-            }
-        }
-    }
-    cooldownTimerStart() {
-        this.enabled = false;
-        setTimeout(() => {
-            this.enabled = true;
-        }, this.cooldown);
-    }
-}
 
-class DurationElement extends Element {
-    constructor(activateAbilityFunction, deactivateAbilityFunction, cooldown = 0, duration = 0) {
-        super(activateAbilityFunction, cooldown);
-        this.deactivateAbilityFunction = deactivateAbilityFunction;
-        this.active = false;
-        if (duration === 0) {
-            this.hasDuration = false;
-        }
-        else {
-            this.hasDuration = true;
-            this.duration = duration;
-        }
-    }
-    ability(key) {
-        if (this.enabled) {
-            ; // Check if the ability is on cooldown   
-            if (this.abilityFunction(key) && this.hasCooldown) {
-                this.enabled = false;
-                if (this.hasDuration) {
-                    this.active = true;
-                    this.durationTimerStart(key);
-                }
-            }
-        }
-    }
-    durationTimerStart(key) {
-        setTimeout(() => {
-            this.cooldownTimerStart();
-            this.deactivateAbilityFunction(key);
-            this.active = false;
-        }, this.duration);
-    }
-}
-
-// class LightningElement extends Element {
-//     constructor(abilityFunction={},cooldown = 0){
-//         super(abilityFunction,cooldown);
-//     }
-
-// }
-// class WaterElement extends Element {
-//     constructor(abilityFunction={},cooldown = 0){
-//         super(abilityFunction,cooldown);
-//     }
-// }
-
-const lightningAbilityFunction = (key) => {
-    var activated = true;
-    let newX = player.x;
-    let newY = player.y;
-    let blinkDistance = 150; // Maximum distance to teleport
-    const step = 10; // Step size for incremental teleportation
-    let currentX = player.x;
-    if (key === 'ArrowRight') {
-        for (let i = 0; i <= blinkDistance; i += step) {
-            const testX = player.x + i;
-            const isColliding = platforms.some(platform => {
-                const isAbovePlatform = newY + player.size <= platform.y;
-                const isBelowPlatform = newY >= platform.y + platform.length;
-                const isLeftOfPlatform = testX + player.size <= platform.x;
-                const isRightOfPlatform = testX >= platform.x + platform.width;
-
-                return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
-            });
-            if (isColliding) break;
-            newX = testX;
-        }
-    } else if (key === 'ArrowLeft') {
-        for (let i = 0; i <= blinkDistance; i += step) {
-            const testX = player.x - i;
-            const isColliding = platforms.some(platform => {
-                const isAbovePlatform = newY + player.size <= platform.y;
-                const isBelowPlatform = newY >= platform.y + platform.length;
-                const isLeftOfPlatform = testX + player.size <= platform.x;
-                const isRightOfPlatform = testX >= platform.x + platform.width;
-
-                return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
-            });
-            if (isColliding) break;
-            newX = testX;
-        }
-    } else {
-        activated = false;
-    }
-    if (activated){
-        const spriteWidth = (newX - player.x); // Width based on blink distance
-        const spriteHeight = player.size * 0.8; // Adjust height to 80% of the player's size
-
-        // Adjust the vertical position to align the image with the player
-        const spriteY = player.y + (player.size - spriteHeight) / 2;
-        // Ensure the image is drawn after it loads
-
-        ctx.drawImage(lightningSpriteImg, currentX + player.size, spriteY, spriteWidth, spriteHeight);
-    }
-
-    // Update player position
-    player.x = newX;
-    player.y = newY;
-    return activated;
-};
-const waterAbilityFunction = (key) => {
-    var activated = false;
-    if (key === 'ArrowRight') {
-        player.direction = "right";
-        const water = new Water(player.x, player.y, player.direction);
-        waterProjectiles.push(water);
-        activated = true;
-    }
-    if (key === 'ArrowLeft') {
-        player.direction = "left";
-        const water = new Water(player.x, player.y, player.direction);
-        waterProjectiles.push(water);
-        activated = true;
-    }
-    if (key === 'ArrowUp') {
-        // player.direction = "up";
-        player.direction = "up";
-        const water = new Water(player.x, player.y, player.direction);
-        waterProjectiles.push(water);
-        activated = true;
-    }
-    if (key === "ArrowDown") {
-        player.direction = "down";
-        const water = new Water(player.x, player.y, player.direction);
-        waterProjectiles.push(water);
-        activated = true;
-    }
-    return activated;
-}
-const windAbilityFunction = (key) => {
-    var activated = false;
-    if (key === "ArrowUp" || key === "W" && !player.onGround) {
-        player.velocityY = -10; // Jump
-        activated = true;
-    }
-    return activated;
-}
-const ghostAbilityFunction = (key) => {
-    var activated = false;
-    if (key === "ArrowUp") {
-        player.phaseable = true;
-        activated = true;
-    }
-    return activated;
-}
-const ghostAbilityDeactivateFunction = () => {
-    player.phaseable = false;
-}
-const lightningElement = new Element(lightningAbilityFunction, 1000); // 1-second cooldown
-const waterElement = new Element(waterAbilityFunction);
-const windElement = new Element(windAbilityFunction, 1000); // 1-second cooldown
-const ghostElement = new DurationElement(ghostAbilityFunction, ghostAbilityDeactivateFunction, 1000, 2000); // 2-second duration, 1 second cooldown
-const elements = [waterElement, lightningElement, windElement, ghostElement];
 class VisibleObject {
     constructor(x, y) {
         this.x = x;
@@ -351,8 +164,214 @@ class Player extends VisibleObject {
     }
 }
 
-var targetScore = 0; // Set the target score to 0 initially
 const player = new Player(); // Create a new player instance
+
+class Element {
+    constructor(player) { this.player = player; }
+    tick() {
+    }
+    keyHandler(key){
+        this.keyChecker(key);
+    }
+    keyChecker(key) {
+
+    }
+}
+class WaterElement extends Element {
+    constructor(player) {
+        super(player);
+    }
+    abilityActivation(direction) {
+        const water = new Water(this.player.x, this.player.y, direction);
+        waterProjectiles.push(water);
+    }
+    keyChecker(key) {
+        if (key === 'ArrowRight') {
+            this.abilityActivation("right");
+        }
+        if (key === 'ArrowLeft') {
+            this.abilityActivation("left");
+        }
+        if (key === 'ArrowUp') {
+            // player.direction = "up";
+            this.abilityActivation("up");
+        }
+        if (key === "ArrowDown") {
+            this.abilityActivation("down");
+        }
+    }
+}
+class CooldownElement extends Element {
+    constructor(player, cooldownTime) {
+        super(player);
+        this.cooldownTime = cooldownTime;
+        this.cooldownTimeRemaining = 0;
+        this.ready = true;
+        this.cooldownInterval = null; // Initialize cooldown interval ID
+    }
+    tick() {
+        if (this.cooldownTimeRemaining <= 0) {
+            this.ready = true;
+        }
+    }
+    keyHandler(key) {
+        if (this.ready) {
+            this.keyChecker(key);
+        }
+        // this.ready must be set to false in the keyChecker method
+    }
+    cooldownTimerStart() {
+        this.cooldownTimeRemaining = this.cooldownTime;
+
+        // Clear any existing interval to prevent multiple intervals
+        if (this.cooldownInterval) {
+            clearInterval(this.cooldownInterval);
+        }
+
+        // Start a new interval
+        this.cooldownInterval = setInterval(() => {
+            this.cooldownTimeRemaining -= 100; // Decrement by 100ms
+            if (this.cooldownTimeRemaining <= 0) {
+                this.cooldownTimeRemaining = 0; // Ensure it doesn't go negative
+                clearInterval(this.cooldownInterval); // Stop the interval
+                this.cooldownInterval = null; // Reset the interval ID
+            }
+        }, 100); // Run every 100ms
+    }
+}
+class WindElement extends CooldownElement {
+    constructor(player, cooldownTime) {
+        super(player, cooldownTime);
+    }
+    abilityActivation() {
+        player.velocityY = -10; // Jump
+        this.cooldownTimerStart(); // Start cooldown after ability activation
+    }
+    keyChecker(key) {
+        if (key === "ArrowUp" && !player.onGround) {
+            this.abilityActivation();
+            this.ready=false;
+        }
+    }
+}
+class DurationElement extends CooldownElement {
+    constructor(player, cooldownTime, duration) {
+        super(player, cooldownTime);
+        this.duration = duration;
+        this.durationRemaining = 0;
+        this.active = false;
+    }
+    tick() {
+        if (this.durationRemaining <= 0 && this.cooldownTimeRemaining <= 0) {
+            this.ready = true;
+        }
+        if (this.active && this.durationRemaining <= 0) {
+            this.abilityDeactivation();
+            this.active = false;
+            this.cooldownTimerStart();
+        }
+    }
+    durationTimerStart() {
+        this.active = true;
+        this.durationRemaining = this.duration;
+
+        // Clear any existing interval to prevent multiple intervals
+        if (this.durationInterval) {
+            clearInterval(this.durationInterval);
+        }
+
+        // Start a new interval
+        this.durationInterval = setInterval(() => {
+            this.durationRemaining -= 100; // Decrement by 100ms
+            if (this.durationRemaining <= 0) {
+                this.durationRemaining = 0; // Ensure it doesn't go negative
+                clearInterval(this.durationInterval); // Stop the interval
+                this.durationInterval = null; // Reset the interval ID
+            }
+        }, 100);
+    }
+    abilityDeactivation() { }
+}
+class LightningElement extends CooldownElement {
+    constructor(player, cooldownTime, blinkDistance) {
+        super(player, cooldownTime);
+        this.blinkDistance = blinkDistance;
+    }
+    abilityActivation(blinkDirection) {
+        let newX = this.player.x;
+        let newY = this.player.y;
+        const step = 10;
+        let currentX = this.player.x;
+        for (let i = 0; i <= this.blinkDistance; i += step) {
+            const testX = this.player.x + (blinkDirection * i);
+            const isColliding = platforms.some(platform => {
+                const isAbovePlatform = newY + this.player.size <= platform.y;
+                const isBelowPlatform = newY >= platform.y + platform.length;
+                const isLeftOfPlatform = testX + this.player.size <= platform.x;
+                const isRightOfPlatform = testX >= platform.x + platform.width;
+
+                return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
+            });
+            if (isColliding) break;
+            newX = testX;
+        }
+        const spriteWidth = (newX - this.player.x); // Width based on blink distance
+        const spriteHeight = this.player.size * 0.8; // Adjust height to 80% of the player's size
+
+        // Adjust the vertical position to align the image with the player
+        const spriteY = this.player.y + (this.player.size - spriteHeight) / 2;
+        // Ensure the image is drawn after it loads
+
+        ctx.drawImage(lightningSpriteImg, currentX + this.player.size, spriteY, spriteWidth, spriteHeight);
+        player.x = newX;
+        player.y = newY;
+        this.cooldownTimerStart(); // Start cooldown after ability activation
+    }
+    keyChecker(key) {
+        if (key === 'ArrowRight') {
+            this.abilityActivation(1);
+        }
+        if (key === 'ArrowLeft') {
+            this.abilityActivation(-1);
+        }
+    }
+}
+class GhostElement extends DurationElement {
+    constructor(player, cooldownTime, duration) {
+        super(player, cooldownTime, duration);
+    }
+    abilityActivation() {
+        this.player.phaseable = true;
+        this.durationTimerStart();
+    }
+    abilityDeactivation() {
+        this.player.phaseable = false;
+    }
+    keyChecker(key) {
+        if (key === "ArrowUp") {
+            this.abilityActivation();
+        }
+    }
+}
+
+// class LightningElement extends Element {
+//     constructor(abilityFunction={},cooldown = 0){
+//         super(abilityFunction,cooldown);
+//     }
+
+// }
+// class WaterElement extends Element {
+//     constructor(abilityFunction={},cooldown = 0){
+//         super(abilityFunction,cooldown);
+//     }
+// }
+const lightningElement = new LightningElement(player, 1000, 150); // 1-second cooldown, 150 px blink distance
+const waterElement = new WaterElement(player);
+const windElement = new WindElement(player, 1000); // 1-second cooldown
+const ghostElement = new GhostElement(player, 5000, 10000); // 2-second duration, 1 second cooldown
+const elements = [waterElement, lightningElement, windElement, ghostElement];
+
+var targetScore = 0; // Set the target score to 0 initially
 
 function play() {
     let audio = new Audio('playerDeath.mp3');
@@ -643,20 +662,20 @@ function gameLoop() {
 
     }
     ctx.fillText("Current Element: " + elementName, canvas.width - 250, 20);
-    if (elements[player.elementIndex].hasCooldown) {
-        if (elements[player.elementIndex].enabled) {
+    if (elements[player.elementIndex] instanceof CooldownElement) {
+        if (elements[player.elementIndex].cooldownTimeRemaining <= 0) {
             ctx.fillStyle = 'green';
             ctx.fillText("Status: Ready", canvas.width - 250, 40);
         }
         else {
             ctx.fillStyle = 'red';
-            ctx.fillText("Status: Recharging", canvas.width - 250, 40);
+            ctx.fillText("Status: Recharging - " + elements[player.elementIndex].cooldownTimeRemaining/1000, canvas.width - 250, 40);
         }
     }
-    if (elements[player.elementIndex].hasDuration) {
+    if (elements[player.elementIndex] instanceof DurationElement) {
         if (elements[player.elementIndex].active) {
             ctx.fillStyle = 'green';
-            ctx.fillText("Status: Active", canvas.width - 250, 60);
+            ctx.fillText("Status: Active - " + elements[player.elementIndex].durationRemaining/1000, canvas.width - 250, 60);
         }
         else {
             ctx.fillStyle = 'red';
@@ -676,7 +695,9 @@ function gameLoop() {
         ctx.fillText("We need to push for more preventative measures for these catastrophies in order to eliminate or mitigate the damages from wildfires.", canvas.width / 2 - 600, canvas.height / 2 + 180);
         ctx.fillText("Because gradual global warming and climate change is the primary cause of the increase in natural wildfires as of late, that should be our main priority.", canvas.width / 2 - 650, canvas.height / 2 + 210);
         ctx.fillText("Combatting global warming will not be easy, but we must work together to prevent this impending doom that is knocking on our door.", canvas.width / 2 - 600, canvas.height / 2 + 240);
-
+    }
+    for (element of elements) {
+    element.tick(); // Call tick method for the current element
     }
 }
 
@@ -694,7 +715,7 @@ BGImage.onload = function () {
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
-    elements[player.elementIndex].ability(event.key);
+    elements[player.elementIndex].keyHandler(event.key);
 
     switch (event.key) {
         case ' ':
