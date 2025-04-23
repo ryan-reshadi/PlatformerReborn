@@ -168,7 +168,9 @@ const player = new Player(); // Create a new player instance
 
 class Element {
     constructor(player) { this.player = player; }
-    tick(key) {
+    tick() {
+    }
+    keyHandler(key){
         this.keyChecker(key);
     }
     keyChecker(key) {
@@ -204,13 +206,20 @@ class CooldownElement extends Element {
         super(player);
         this.cooldownTime = cooldownTime;
         this.cooldownTimeRemaining = 0;
+        this.ready = true;
+        this.cooldownInterval = null; // Initialize cooldown interval ID
     }
-    tick(key) {
+    tick() {
         if (this.cooldownTimeRemaining <= 0) {
-            this.keyChecker(key);
+            this.ready = true;
         }
     }
-
+    keyHandler(key) {
+        if (this.ready) {
+            this.keyChecker(key);
+        }
+        // this.ready must be set to false in the keyChecker method
+    }
     cooldownTimerStart() {
         this.cooldownTimeRemaining = this.cooldownTime;
 
@@ -241,6 +250,7 @@ class WindElement extends CooldownElement {
     keyChecker(key) {
         if (key === "ArrowUp" && !player.onGround) {
             this.abilityActivation();
+            this.ready=false;
         }
     }
 }
@@ -251,9 +261,9 @@ class DurationElement extends CooldownElement {
         this.durationRemaining = 0;
         this.active = false;
     }
-    tick(key) {
+    tick() {
         if (this.durationRemaining <= 0 && this.cooldownTimeRemaining <= 0) {
-            this.keyChecker(key);
+            this.ready = true;
         }
         if (this.active && this.durationRemaining <= 0) {
             this.abilityDeactivation();
@@ -355,113 +365,10 @@ class GhostElement extends DurationElement {
 //         super(abilityFunction,cooldown);
 //     }
 // }
-
-const lightningAbilityFunction = (key) => {
-    var activated = true;
-    let newX = player.x;
-    let newY = player.y;
-    let blinkDistance = 150; // Maximum distance to teleport
-    const step = 10; // Step size for incremental teleportation
-    let currentX = player.x;
-    if (key === 'ArrowRight') {
-        for (let i = 0; i <= blinkDistance; i += step) {
-            const testX = player.x + i;
-            const isColliding = platforms.some(platform => {
-                const isAbovePlatform = newY + player.size <= platform.y;
-                const isBelowPlatform = newY >= platform.y + platform.length;
-                const isLeftOfPlatform = testX + player.size <= platform.x;
-                const isRightOfPlatform = testX >= platform.x + platform.width;
-
-                return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
-            });
-            if (isColliding) break;
-            newX = testX;
-        }
-    } else if (key === 'ArrowLeft') {
-        for (let i = 0; i <= blinkDistance; i += step) {
-            const testX = player.x - i;
-            const isColliding = platforms.some(platform => {
-                const isAbovePlatform = newY + player.size <= platform.y;
-                const isBelowPlatform = newY >= platform.y + platform.length;
-                const isLeftOfPlatform = testX + player.size <= platform.x;
-                const isRightOfPlatform = testX >= platform.x + platform.width;
-
-                return !(isAbovePlatform || isBelowPlatform || isLeftOfPlatform || isRightOfPlatform);
-            });
-            if (isColliding) break;
-            newX = testX;
-        }
-    } else {
-        activated = false;
-    }
-    if (activated) {
-        const spriteWidth = (newX - player.x); // Width based on blink distance
-        const spriteHeight = player.size * 0.8; // Adjust height to 80% of the player's size
-
-        // Adjust the vertical position to align the image with the player
-        const spriteY = player.y + (player.size - spriteHeight) / 2;
-        // Ensure the image is drawn after it loads
-
-        ctx.drawImage(lightningSpriteImg, currentX + player.size, spriteY, spriteWidth, spriteHeight);
-    }
-
-    // Update player position
-    player.x = newX;
-    player.y = newY;
-    return activated;
-};
-const waterAbilityFunction = (key) => {
-    var activated = false;
-    if (key === 'ArrowRight') {
-        player.direction = "right";
-        const water = new Water(player.x, player.y, player.direction);
-        waterProjectiles.push(water);
-        activated = true;
-    }
-    if (key === 'ArrowLeft') {
-        player.direction = "left";
-        const water = new Water(player.x, player.y, player.direction);
-        waterProjectiles.push(water);
-        activated = true;
-    }
-    if (key === 'ArrowUp') {
-        // player.direction = "up";
-        player.direction = "up";
-        const water = new Water(player.x, player.y, player.direction);
-        waterProjectiles.push(water);
-        activated = true;
-    }
-    if (key === "ArrowDown") {
-        player.direction = "down";
-        const water = new Water(player.x, player.y, player.direction);
-        waterProjectiles.push(water);
-        activated = true;
-    }
-    return activated;
-}
-const windAbilityFunction = (key) => {
-    var activated = false;
-    if (key === "ArrowUp" || key === "W" && !player.onGround) {
-        player.velocityY = -10; // Jump
-        activated = true;
-    }
-    return activated;
-}
-const ghostAbilityFunction = (key) => {
-    var activated = false;
-    if (key === "ArrowUp") {
-        player.phaseable = true;
-        activated = true;
-    }
-    return activated;
-}
-const ghostAbilityDeactivateFunction = () => {
-    player.phaseable = false;
-}
 const lightningElement = new LightningElement(player, 1000, 150); // 1-second cooldown, 150 px blink distance
 const waterElement = new WaterElement(player);
 const windElement = new WindElement(player, 1000); // 1-second cooldown
-const ghostElement = new GhostElement(player, 2000, 1000); // 2-second duration, 1 second cooldown
+const ghostElement = new GhostElement(player, 5000, 10000); // 2-second duration, 1 second cooldown
 const elements = [waterElement, lightningElement, windElement, ghostElement];
 
 var targetScore = 0; // Set the target score to 0 initially
@@ -762,13 +669,13 @@ function gameLoop() {
         }
         else {
             ctx.fillStyle = 'red';
-            ctx.fillText("Status: Recharging: " + elements[player.elementIndex].cooldownTimeRemaining/1000, canvas.width - 250, 40);
+            ctx.fillText("Status: Recharging - " + elements[player.elementIndex].cooldownTimeRemaining/1000, canvas.width - 250, 40);
         }
     }
     if (elements[player.elementIndex] instanceof DurationElement) {
         if (elements[player.elementIndex].active) {
             ctx.fillStyle = 'green';
-            ctx.fillText("Status: Active", canvas.width - 250, 60);
+            ctx.fillText("Status: Active - " + elements[player.elementIndex].durationRemaining/1000, canvas.width - 250, 60);
         }
         else {
             ctx.fillStyle = 'red';
@@ -788,7 +695,9 @@ function gameLoop() {
         ctx.fillText("We need to push for more preventative measures for these catastrophies in order to eliminate or mitigate the damages from wildfires.", canvas.width / 2 - 600, canvas.height / 2 + 180);
         ctx.fillText("Because gradual global warming and climate change is the primary cause of the increase in natural wildfires as of late, that should be our main priority.", canvas.width / 2 - 650, canvas.height / 2 + 210);
         ctx.fillText("Combatting global warming will not be easy, but we must work together to prevent this impending doom that is knocking on our door.", canvas.width / 2 - 600, canvas.height / 2 + 240);
-
+    }
+    for (element of elements) {
+    element.tick(); // Call tick method for the current element
     }
 }
 
@@ -806,7 +715,7 @@ BGImage.onload = function () {
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
-    elements[player.elementIndex].tick(event.key);
+    elements[player.elementIndex].keyHandler(event.key);
 
     switch (event.key) {
         case ' ':
