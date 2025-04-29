@@ -170,9 +170,9 @@ class Element {
     constructor(player) { this.player = player; }
     tick() {
     }
-    keyHandler(key){
-        this.keyChecker(key);
-    }
+    // keyHandler(key){
+    //     this.keyChecker(key);
+    // }
     keyChecker(key) {
 
     }
@@ -214,12 +214,12 @@ class CooldownElement extends Element {
             this.ready = true;
         }
     }
-    keyHandler(key) {
-        if (this.ready) {
-            this.keyChecker(key);
-        }
-        // this.ready must be set to false in the keyChecker method
-    }
+    // keyHandler(key) {
+    //     if (this.ready) {
+    //         this.keyChecker(key);
+    //     }
+    //     // this.ready must be set to false in the keyChecker method
+    // }
     cooldownTimerStart() {
         this.cooldownTimeRemaining = this.cooldownTime;
 
@@ -248,7 +248,7 @@ class WindElement extends CooldownElement {
         this.cooldownTimerStart(); // Start cooldown after ability activation
     }
     keyChecker(key) {
-        if (key === "ArrowUp" && !player.onGround) {
+        if (this.ready && key === "ArrowUp" && !player.onGround) {
             this.abilityActivation();
             this.ready=false;
         }
@@ -328,12 +328,13 @@ class LightningElement extends CooldownElement {
         this.cooldownTimerStart(); // Start cooldown after ability activation
     }
     keyChecker(key) {
+        if (this.ready){
         if (key === 'ArrowRight') {
             this.abilityActivation(1);
         }
         if (key === 'ArrowLeft') {
             this.abilityActivation(-1);
-        }
+        }}
     }
 }
 class GhostElement extends DurationElement {
@@ -348,7 +349,7 @@ class GhostElement extends DurationElement {
         this.player.phaseable = false;
     }
     keyChecker(key) {
-        if (key === "ArrowUp") {
+        if (this.ready && key === "ArrowUp") {
             this.abilityActivation();
         }
     }
@@ -715,7 +716,8 @@ BGImage.onload = function () {
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
-    elements[player.elementIndex].keyHandler(event.key);
+    // elements[player.elementIndex].keyHandler(event.key);
+    elements[player.elementIndex].keyChecker(event.key);
 
     switch (event.key) {
         case ' ':
