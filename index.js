@@ -353,7 +353,7 @@ class GhostElement extends DurationElement {
         }
     }
 }
-
+class FireElement extends Element {}
 // class LightningElement extends Element {
 //     constructor(abilityFunction={},cooldown = 0){
 //         super(abilityFunction,cooldown);
