@@ -1,4 +1,4 @@
-import { Ability, CooldownAbility, DurationAbility } from './abilities.js';
+import { WaterAbility, LightningAbility, WindAbility1, WindAbility2, GhostAbility } from './abilities.js';
 export class Element {
     constructor(player) {
         this.player = player;
@@ -33,7 +33,7 @@ export class WaterElement extends Element {
 export class WindElement extends Element {
     constructor(player) {
         super(player);
-        this.abilities = [new CooldownAbility(player, 1000)]; // 1-second cooldown
+        this.abilities = []; // 1-second cooldown
     }
     
     keyChecker(key) {
@@ -44,9 +44,8 @@ export class WindElement extends Element {
     }
 }
 export class LightningElement extends Element {
-    constructor(player,blinkDistance) {
+    constructor(player) {
         super(player);
-        this.blinkDistance = blinkDistance;
         this.abilities = [new LightningAbility(player, 1000)]; // 1-second cooldown
     }
     keyChecker(key) {
@@ -61,8 +60,9 @@ export class LightningElement extends Element {
     }
 }
 export class GhostElement extends Element {
-    constructor(player) {
+    constructor(player, ) {
         super(player);
+        this.abilities = [new GhostAbility(player, 10000, 2000)]; // 1-second cooldown
     }
     keyChecker(key) {
         if (this.ready && key === "ArrowUp") {

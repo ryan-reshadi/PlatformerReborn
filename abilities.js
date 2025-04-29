@@ -2,6 +2,7 @@ export class Ability {
     constructor() {
         this.ready = true;
     }
+    tick(){}
 }
 export class CooldownAbility extends Ability {
     constructor(player, cooldownTime) {
@@ -35,7 +36,7 @@ export class CooldownAbility extends Ability {
     }
 }
 export class DurationAbility extends CooldownAbility {
-    constructor(player, cooldownTime, duration) {
+    constructor(player, duration, cooldownTime) {
         super(player);
         this.cooldownTime = cooldownTime;
         this.cooldownTimeRemaining = 0;
@@ -54,6 +55,7 @@ export class DurationAbility extends CooldownAbility {
         }
     }
     durationTimerStart() {
+        this.ready = false; // Set ready to false when the ability is activated
         this.active = true;
         this.durationRemaining = this.duration;
 
@@ -118,9 +120,31 @@ export class LightningAbility extends Ability {
         this.cooldownTimerStart();
     }
 }
+export class WindAbility1 extends CooldownAbility {
+    constructor(player){
+        super(player, 1000); // 1-second cooldown
+    }
+    abilityActivation(){
+        this.player.velocityY -= 10;
+        this.cooldownTimerStart();
+    }
+
+}
+export class WindAbility2 extends DurationAbility {
+    constructor(player){
+        super(player, 1000, 2000); // 1-second duration, 2-second cooldown
+    }
+    abilityActivation(){
+        this.player.speed = 10;
+    }
+    abilityDeactivation(){
+        this.player.speed = 5;
+        this.cooldownTimerStart(); // Start cooldown after deactivation
+    }
+}
 export class GhostAbility extends DurationAbility {
-    constructor(player) {
-        super(player);
+    constructor(player,duration, cooldownTime) {
+        super(player,duration, cooldownTime); // 10-second cooldown, 2-second duration
     }
     abilityActivation() {
         this.player.phaseable = true;
