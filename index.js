@@ -58,7 +58,7 @@ class Player extends VisibleObject {
         this.onGround = false;
         this.direction = "up";
         this.damageable = true;
-        this.deaths = -1;
+        this.deaths = 0;
         this.elementIndex = 0;
         this.phaseable = false;
     }
@@ -300,7 +300,7 @@ class WindAbility1 extends CooldownAbility {
 }
 class WindAbility2 extends DurationAbility {
     constructor(player){
-        super(player, 1000, 2000); // 1-second duration, 2-second cooldown
+        super(player, 5000, 3000); // 5-second duration, 3-second cooldown
     }
     abilityActivation(){
         this.player.speed = 10;
@@ -553,7 +553,7 @@ class MovingPlatform extends Platform {
 }
 objects.push(player);
 
-const height = 20
+const height = 20;
 const brown = '#964B00'; // Brown color for platforms
 const red = '#FF0000'; // Red color for fire
 const BGImage = new Image(1400, 850);
@@ -731,19 +731,19 @@ function gameLoop() {
                 ctx.fillStyle = 'red';
                 ctx.fillText("Ability " + (abilityCount+1) +" Status: Recharging - " + ability.cooldownTimeRemaining / 1000, canvas.width - 300, 40+(abilityCount*20));
             }
-            abilityCount += 1;
+            
         }
         if (ability instanceof DurationAbility) {
             if (ability.active) {
                 ctx.fillStyle = 'green';
-                ctx.fillText("Ability " + (abilityCount+1) +" Status: Active - " + ability.durationRemaining / 1000, canvas.width - 300, 40+ (abilityCount*20));
+                ctx.fillText("Ability " + (abilityCount+1) +" Status: Active - " + ability.durationRemaining / 1000, canvas.width - 300, 60+ (abilityCount*20));
             }
             else {
                 ctx.fillStyle = 'red';
-                ctx.fillText("Ability " + (abilityCount+1) +" Status: Inactive", canvas.width - 300, 40+ (abilityCount*20));
+                ctx.fillText("Ability " + (abilityCount+1) +" Status: Inactive", canvas.width - 300, 40+ (abilityCount*20 +20));
             }
-            abilityCount += 1;
         }
+        abilityCount += 1;
     }
 
     if (player.score >= targetScore) {
@@ -769,7 +769,7 @@ function gameLoop() {
 
 // Set the game loop to run at 60 frames per second
 function startGameLoop() {
-    const tickRate = 1000 / 60; // 60 frames per second
+    var tickRate = 1000 / 60; // 60 frames per second
     setInterval(gameLoop, tickRate);
 }
 
@@ -861,7 +861,7 @@ function startLevel(level) {
         platforms.push(new Platform(800, 670, 70, height, brown));
         // Elevator
         platforms.push(new Platform(1070, 670, 150, height, brown));
-        platforms.push(new Platform(250, 125, 20, height * 6, brown, true)); // tall wall
+        platforms.push(new Platform(250, 125, 300, height * 6, brown, true)); // tall wall
 
         for (let i = 90; i <= 90 * 4; i = i + 90) {
             platforms.push(new Platform(1100, 670 - i, 110, height, brown));
@@ -889,7 +889,9 @@ function startLevel(level) {
     }
     // Update target score to match the number of fires
     targetScore = fires.length; // Dynamically set targetScore here
-
+    setTimeout(() => {
+        player.deaths=0;
+    }, 100); // Delay for 1 second before showing the game canvas
     // Start the game loop
     gameLoop();
 }
