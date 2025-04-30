@@ -164,6 +164,99 @@ class Player extends VisibleObject {
         }
     }
 }
+class Enemy extends VisibleObject {
+    constructor(x, y) {
+        super(x, y);
+        this.size = 20;
+        this.speed = 2; // Movement speed
+        this.velocityY = 0; // Vertical velocity for gravity
+        this.onGround = false;
+        this.jumpPower = -10; // Jump velocity
+    }
+
+    update() {
+        // Apply gravity
+        if (!this.onGround) {
+            this.velocityY += gravity;
+        }
+        this.y += this.velocityY;
+
+        // Check collisions with platforms
+        this.onGround = false;
+        let currentPlatform = null;
+        for (const platform of platforms) {
+            const isAbovePlatform = this.y + this.size <= platform.y;
+            const isBelowPlatform = this.y >= platform.y + platform.length;
+            const isLeftOfPlatform = this.x + this.size <= platform.x;
+            const isRightOfPlatform = this.x >= platform.x + platform.width;
+
+            if (
+                !isBelowPlatform &&
+                !isLeftOfPlatform &&
+                !isRightOfPlatform &&
+                this.velocityY >= 0 &&
+                this.y + this.size > platform.y &&
+                this.y < platform.y
+            ) {
+                this.y = platform.y - this.size; // Place enemy on top of the platform
+                this.velocityY = 0; // Stop falling
+                this.onGround = true;
+                currentPlatform = platform;
+                break;
+            }
+        }
+
+        // Move towards the player
+        if (this.onGround) {
+            if (this.x < player.x) {
+                this.x += this.speed;
+            } else if (this.x > player.x) {
+                this.x -= this.speed;
+            }
+
+            // Check if the enemy is at the edge of the current platform
+            if (currentPlatform) {
+                const atLeftEdge = this.x <= currentPlatform.x;
+                const atRightEdge = this.x + this.size >= currentPlatform.x + currentPlatform.width;
+
+                if (atLeftEdge || atRightEdge) {
+                    this.attemptJumpToNextPlatform(atLeftEdge ? -1 : 1);
+                }
+            }
+        }
+    }
+
+    attemptJumpToNextPlatform(direction) {
+        // Find the closest platform in the given direction
+        const potentialPlatforms = platforms.filter(platform => {
+            return direction === -1
+                ? platform.x + platform.width < this.x // Platforms to the left
+                : platform.x > this.x + this.size; // Platforms to the right
+        });
+
+        let closestPlatform = null;
+        let closestDistance = Infinity;
+
+        for (const platform of potentialPlatforms) {
+            const distance = Math.abs(platform.x - this.x);
+            if (distance < closestDistance) {
+                closestPlatform = platform;
+                closestDistance = distance;
+            }
+        }
+
+        // Jump towards the closest platform if found
+        if (closestPlatform) {
+            this.velocityY = this.jumpPower;
+            this.x += direction * this.speed * 5; // Move slightly in the jump direction
+        }
+    }
+
+    draw() {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+    }
+}
 const player = new Player(); // Create a new player instance
 class Ability {
     constructor(player) {
@@ -708,6 +801,21 @@ function gameLoop() {
             }
         }
     }
+    // Update and draw enemies
+    for (const enemy of enemies) {
+        enemy.update();
+        enemy.draw();
+
+        // Check collision with player
+        if (
+            enemy.x < player.x + player.size &&
+            enemy.x + enemy.size > player.x &&
+            enemy.y < player.y + player.size &&
+            enemy.y + enemy.size > player.y
+        ) {
+            player.die();
+        }
+    }
     switch (currentLevel) {
         case 1:
             var textColor = "white";
@@ -939,6 +1047,29 @@ function startLevel(level) {
         fires.push(new Fire(1000, 475));
         fires.push(new Fire(500, 550));
         fires.push(new Fire(600, 600));
+    }
+    // Clear existing enemies
+    enemies.length = 0;
+
+    if (level === 1) {
+        enemies.push(new Enemy(100, 100));
+        enemies.push(new Enemy(300, 200));
+    } else if (level === 2) {
+        enemies.push(new Enemy(200, 150));
+        enemies.push(new Enemy(400, 300));
+    } else if (level === 3) {
+        enemies.push(new Enemy(50, 500));
+        enemies.push(new Enemy(600, 400));
+        enemies.push(new Enemy(800, 200));
+    } else if (level === 4) {
+        enemies.push(new Enemy(100, 150));
+        enemies.push(new Enemy(500, 300));
+        enemies.push(new Enemy(900, 400));
+        enemies.push(new Enemy(1200, 200));
+    }
+
+    for (const enemy of enemies) {
+        objects.push(enemy);
     }
     for (i of fires) {
         objects.push(i);
