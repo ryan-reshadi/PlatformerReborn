@@ -6,6 +6,7 @@ const waterProjectiles = [];
 const gravity = 0.4; // Gravity force
 const platforms = []; // Array to hold platforms
 const fires = []; //array to hold fires
+var enemies = []; //array to hold enemies
 var offset = 0; //tracks objects offset
 const lightningSpriteImg = new Image();
 lightningSpriteImg.src = 'lightning-removebg-preview.png'; // Path to your lightning image
@@ -58,7 +59,7 @@ class Player extends VisibleObject {
         this.onGround = false;
         this.direction = "up";
         this.damageable = true;
-        this.deaths = -1;
+        this.deaths = 0;
         this.elementIndex = 0;
         this.phaseable = false;
     }
@@ -163,50 +164,19 @@ class Player extends VisibleObject {
         }
     }
 }
-
 const player = new Player(); // Create a new player instance
-
-class Element {
-    constructor(player) { this.player = player; }
-    tick() {
-    }
-    keyHandler(key){
-        this.keyChecker(key);
-    }
-    keyChecker(key) {
-
-    }
-}
-class WaterElement extends Element {
+class Ability {
     constructor(player) {
-        super(player);
+        this.player = player;
+        this.ready = true;
     }
-    abilityActivation(direction) {
-        const water = new Water(this.player.x, this.player.y, direction);
-        waterProjectiles.push(water);
-    }
-    keyChecker(key) {
-        if (key === 'ArrowRight') {
-            this.abilityActivation("right");
-        }
-        if (key === 'ArrowLeft') {
-            this.abilityActivation("left");
-        }
-        if (key === 'ArrowUp') {
-            // player.direction = "up";
-            this.abilityActivation("up");
-        }
-        if (key === "ArrowDown") {
-            this.abilityActivation("down");
-        }
-    }
+    tick() { }
 }
-class CooldownElement extends Element {
+class CooldownAbility extends Ability {
     constructor(player, cooldownTime) {
         super(player);
         this.cooldownTime = cooldownTime;
         this.cooldownTimeRemaining = 0;
-        this.ready = true;
         this.cooldownInterval = null; // Initialize cooldown interval ID
     }
     tick() {
@@ -214,15 +184,9 @@ class CooldownElement extends Element {
             this.ready = true;
         }
     }
-    keyHandler(key) {
-        if (this.ready) {
-            this.keyChecker(key);
-        }
-        // this.ready must be set to false in the keyChecker method
-    }
     cooldownTimerStart() {
         this.cooldownTimeRemaining = this.cooldownTime;
-
+        this.ready = false; // Set ready to false when the ability is activated
         // Clear any existing interval to prevent multiple intervals
         if (this.cooldownInterval) {
             clearInterval(this.cooldownInterval);
@@ -239,24 +203,11 @@ class CooldownElement extends Element {
         }, 100); // Run every 100ms
     }
 }
-class WindElement extends CooldownElement {
-    constructor(player, cooldownTime) {
-        super(player, cooldownTime);
-    }
-    abilityActivation() {
-        player.velocityY = -10; // Jump
-        this.cooldownTimerStart(); // Start cooldown after ability activation
-    }
-    keyChecker(key) {
-        if (key === "ArrowUp" && !player.onGround) {
-            this.abilityActivation();
-            this.ready=false;
-        }
-    }
-}
-class DurationElement extends CooldownElement {
-    constructor(player, cooldownTime, duration) {
-        super(player, cooldownTime);
+class DurationAbility extends CooldownAbility {
+    constructor(player, duration, cooldownTime) {
+        super(player);
+        this.cooldownTime = cooldownTime;
+        this.cooldownTimeRemaining = 0;
         this.duration = duration;
         this.durationRemaining = 0;
         this.active = false;
@@ -272,6 +223,7 @@ class DurationElement extends CooldownElement {
         }
     }
     durationTimerStart() {
+        this.ready = false; // Set ready to false when the ability is activated
         this.active = true;
         this.durationRemaining = this.duration;
 
@@ -292,17 +244,26 @@ class DurationElement extends CooldownElement {
     }
     abilityDeactivation() { }
 }
-class LightningElement extends CooldownElement {
-    constructor(player, cooldownTime, blinkDistance) {
-        super(player, cooldownTime);
-        this.blinkDistance = blinkDistance;
+
+class WaterAbility extends Ability {
+    constructor(player) {
+        super(player);
     }
-    abilityActivation(blinkDirection) {
+    abilityActivation(direction) {
+        const water = new Water(this.player.x, this.player.y, direction);
+        waterProjectiles.push(water);
+    }
+}
+class LightningAbility extends CooldownAbility {
+    constructor(player, cooldownTime) {
+        super(player, cooldownTime);
+    }
+    abilityActivation(blinkDirection, blinkDistance) {
         let newX = this.player.x;
         let newY = this.player.y;
         const step = 10;
         let currentX = this.player.x;
-        for (let i = 0; i <= this.blinkDistance; i += step) {
+        for (let i = 0; i <= blinkDistance; i += step) {
             const testX = this.player.x + (blinkDirection * i);
             const isColliding = platforms.some(platform => {
                 const isAbovePlatform = newY + this.player.size <= platform.y;
@@ -323,22 +284,82 @@ class LightningElement extends CooldownElement {
         // Ensure the image is drawn after it loads
 
         ctx.drawImage(lightningSpriteImg, currentX + this.player.size, spriteY, spriteWidth, spriteHeight);
-        player.x = newX;
-        player.y = newY;
-        this.cooldownTimerStart(); // Start cooldown after ability activation
-    }
-    keyChecker(key) {
-        if (key === 'ArrowRight') {
-            this.abilityActivation(1);
-        }
-        if (key === 'ArrowLeft') {
-            this.abilityActivation(-1);
-        }
+        this.player.x = newX;
+        this.player.y = newY;
+        this.cooldownTimerStart();
     }
 }
-class GhostElement extends DurationElement {
-    constructor(player, cooldownTime, duration) {
-        super(player, cooldownTime, duration);
+class LightningSuperAbility extends CooldownAbility {
+    constructor(player, cooldown) {
+        super(player, cooldown); // 1-second cooldown
+        // this.chargingUp = false;
+        this.chargeCoefficient = 0;
+        this.chargeInterval = null;
+        this.maxCoefficient = 5;
+    }
+    beginCharging() {
+        // If an interval is running, return
+        if (this.chargeInterval != null) {
+            return;
+        }
+
+        // Start a new interval
+        this.chargeInterval = setInterval(() => {
+            if (this.chargeCoefficient < this.maxCoefficient) {
+                this.chargeCoefficient += 0.1; // Increment by 0.1 every second
+                // console.log("Charge Coefficient:", this.chargeCoefficient); // Debugging output
+            } else {
+                this.chargeCoefficient = this.maxCoefficient; // Cap at maxCoefficient
+                clearInterval(this.chargeInterval); // Stop the interval
+                this.chargeInterval = null; // Reset the interval ID
+            }
+        }, 100); // Run every 100ms (0.1 seconds)
+    }
+    checkDischarge(key) {
+        if (this.ready && key === "g") {
+            // this.abilityActivation(this.chargeCoefficient);
+            this.discharge();
+        }
+    }
+    discharge() {
+        this.chargingUp = false;
+        this.chargeCoefficient = 0;
+        clearInterval(this.chargeInterval); // Stop the interval
+        this.chargeInterval = null; // Reset the interval ID
+
+        this.cooldownTimerStart(); // Start cooldown after discharge
+
+    }
+    activateAbility() {
+
+    }
+}
+class WindAbility1 extends CooldownAbility {
+    constructor(player, cooldownTime) {
+        super(player, cooldownTime); // 1-second cooldown
+    }
+    abilityActivation() {
+        this.player.velocityY = -10;
+        this.cooldownTimerStart();
+    }
+
+}
+class WindAbility2 extends DurationAbility {
+    constructor(player, duration, cooldown) {
+        super(player, duration, cooldown); // 5-second duration, 3-second cooldown
+    }
+    abilityActivation() {
+        this.player.speed = 10;
+        this.durationTimerStart();
+    }
+    abilityDeactivation() {
+        this.player.speed = 5;
+        this.cooldownTimerStart(); // Start cooldown after deactivation
+    }
+}
+class GhostAbility extends DurationAbility {
+    constructor(player, duration, cooldownTime) {
+        super(player, duration, cooldownTime); // 10-second cooldown, 2-second duration
     }
     abilityActivation() {
         this.player.phaseable = true;
@@ -347,28 +368,95 @@ class GhostElement extends DurationElement {
     abilityDeactivation() {
         this.player.phaseable = false;
     }
+}
+class Element {
+    constructor(player) {
+        this.player = player;
+        this.abilities = [];
+    }
     keyChecker(key) {
-        if (key === "ArrowUp") {
-            this.abilityActivation();
+
+    }
+}
+class WaterElement extends Element {
+    constructor(player) {
+        super(player);
+        this.abilities = [new WaterAbility(player)];
+    }
+    keyChecker(key) {
+        if (key === 'ArrowRight') {
+            this.abilities[0].abilityActivation("right");
+        }
+        if (key === 'ArrowLeft') {
+            this.abilities[0].abilityActivation("left");
+        }
+        if (key === 'ArrowUp') {
+            // player.direction = "up";
+            this.abilities[0].abilityActivation("up");
+        }
+        if (key === "ArrowDown") {
+            this.abilities[0].abilityActivation("down");
         }
     }
 }
-class FireElement extends Element {}
-// class LightningElement extends Element {
-//     constructor(abilityFunction={},cooldown = 0){
-//         super(abilityFunction,cooldown);
-//     }
 
-// }
-// class WaterElement extends Element {
-//     constructor(abilityFunction={},cooldown = 0){
-//         super(abilityFunction,cooldown);
-//     }
-// }
-const lightningElement = new LightningElement(player, 1000, 150); // 1-second cooldown, 150 px blink distance
+class WindElement extends Element {
+    constructor(player) {
+        super(player);
+        this.abilities = [new WindAbility1(player, 1000), new WindAbility2(player, 5000, 3000)]; // 1-second cooldown
+    }
+
+    keyChecker(key) {
+        if (this.abilities[0].ready && key === "ArrowUp" && !player.onGround) {
+            this.abilities[0].abilityActivation();
+            this.abilities[0].ready = false;
+        }
+        if (this.abilities[1].ready && (key === "ArrowLeft" || key == "ArrowRight")) {
+            this.abilities[1].abilityActivation();
+            this.abilities[0].ready = false;
+        }
+    }
+}
+class LightningElement extends Element {
+    constructor(player) {
+        super(player);
+        this.blinkDistance = 150; // Blink distance in pixels
+        this.abilities = [new LightningAbility(player, 1000), new LightningSuperAbility(player, 10000)]; // 1-second cooldown
+    }
+    keyChecker(key) {
+        if (this.abilities[0].ready) {
+            if (key === 'ArrowRight') {
+                this.abilities[0].abilityActivation(1, this.blinkDistance);
+            }
+            if (key === 'ArrowLeft') {
+                this.abilities[0].abilityActivation(-1, this.blinkDistance);
+            }
+        }
+
+        if (this.abilities[1].ready && key === "g") {
+            this.abilities[1].beginCharging();
+        }
+    }
+}
+class GhostElement extends Element {
+    constructor(player,) {
+        super(player);
+        this.abilities = [new GhostAbility(player, 10000, 2000)]; // 1-second cooldown
+    }
+    keyChecker(key) {
+        if (this.abilities[0].ready && key === "ArrowUp") {
+            this.abilities[0].abilityActivation();
+        }
+    }
+}
+class FireElement extends Element { }
+
+
+
+const lightningElement = new LightningElement(player); // 1-second cooldown, 150 px blink distance
 const waterElement = new WaterElement(player);
-const windElement = new WindElement(player, 1000); // 1-second cooldown
-const ghostElement = new GhostElement(player, 5000, 10000); // 2-second duration, 1 second cooldown
+const windElement = new WindElement(player); // 1-second cooldown
+const ghostElement = new GhostElement(player); // 2-second duration, 1 second cooldown
 const elements = [waterElement, lightningElement, windElement, ghostElement];
 
 var targetScore = 0; // Set the target score to 0 initially
@@ -515,7 +603,7 @@ class MovingPlatform extends Platform {
 }
 objects.push(player);
 
-const height = 20
+const height = 20;
 const brown = '#964B00'; // Brown color for platforms
 const red = '#FF0000'; // Red color for fire
 const BGImage = new Image(1400, 850);
@@ -661,27 +749,53 @@ function gameLoop() {
             break;
 
     }
-    ctx.fillText("Current Element: " + elementName, canvas.width - 250, 20);
-    if (elements[player.elementIndex] instanceof CooldownElement) {
-        if (elements[player.elementIndex].cooldownTimeRemaining <= 0) {
-            ctx.fillStyle = 'green';
-            ctx.fillText("Status: Ready", canvas.width - 250, 40);
+    ctx.fillText("Current Element: " + elementName, canvas.width - 300, 20);
+    // if (elements[player.elementIndex] instanceof CooldownElement) {
+    //     if (elements[player.elementIndex].cooldownTimeRemaining <= 0) {
+    //         ctx.fillStyle = 'green';
+    //         ctx.fillText("Status: Ready", canvas.width - 250, 40);
+    //     }
+    //     else {
+    //         ctx.fillStyle = 'red';
+    //         ctx.fillText("Status: Recharging - " + elements[player.elementIndex].cooldownTimeRemaining / 1000, canvas.width - 250, 40);
+    //     }
+    // }
+    // if (elements[player.elementIndex] instanceof DurationElement) {
+    //     if (elements[player.elementIndex].active) {
+    //         ctx.fillStyle = 'green';
+    //         ctx.fillText("Status: Active - " + elements[player.elementIndex].durationRemaining / 1000, canvas.width - 250, 60);
+    //     }
+    //     else {
+    //         ctx.fillStyle = 'red';
+    //         ctx.fillText("Status: Inactive", canvas.width - 250, 60);
+    //     }
+    // }
+    abilityCount = 0;
+    for (var ability of elements[player.elementIndex].abilities) {
+        if (ability instanceof CooldownAbility) {
+            if (ability.cooldownTimeRemaining <= 0) {
+                ctx.fillStyle = 'green';
+                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Ready", canvas.width - 300, 40 + (abilityCount * 20));
+            }
+            else {
+                ctx.fillStyle = 'red';
+                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Recharging - " + ability.cooldownTimeRemaining / 1000, canvas.width - 300, 40 + (abilityCount * 20));
+            }
+
         }
-        else {
-            ctx.fillStyle = 'red';
-            ctx.fillText("Status: Recharging - " + elements[player.elementIndex].cooldownTimeRemaining/1000, canvas.width - 250, 40);
+        if (ability instanceof DurationAbility) {
+            if (ability.active) {
+                ctx.fillStyle = 'green';
+                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Active - " + ability.durationRemaining / 1000, canvas.width - 300, 60 + (abilityCount * 20));
+            }
+            else {
+                ctx.fillStyle = 'red';
+                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Inactive", canvas.width - 300, 40 + (abilityCount * 20 + 20));
+            }
         }
+        abilityCount += 1;
     }
-    if (elements[player.elementIndex] instanceof DurationElement) {
-        if (elements[player.elementIndex].active) {
-            ctx.fillStyle = 'green';
-            ctx.fillText("Status: Active - " + elements[player.elementIndex].durationRemaining/1000, canvas.width - 250, 60);
-        }
-        else {
-            ctx.fillStyle = 'red';
-            ctx.fillText("Status: Inactive", canvas.width - 250, 60);
-        }
-    }
+
     if (player.score >= targetScore) {
         ctx.fillStyle = '#88E788';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -696,14 +810,16 @@ function gameLoop() {
         ctx.fillText("Because gradual global warming and climate change is the primary cause of the increase in natural wildfires as of late, that should be our main priority.", canvas.width / 2 - 650, canvas.height / 2 + 210);
         ctx.fillText("Combatting global warming will not be easy, but we must work together to prevent this impending doom that is knocking on our door.", canvas.width / 2 - 600, canvas.height / 2 + 240);
     }
-    for (element of elements) {
-    element.tick(); // Call tick method for the current element
+    for (var element of elements) {
+        for (var ability of element.abilities) {
+            ability.tick();
+        }
     }
 }
 
 // Set the game loop to run at 60 frames per second
 function startGameLoop() {
-    const tickRate = 1000 / 60; // 60 frames per second
+    var tickRate = 1000 / 60; // 60 frames per second
     setInterval(gameLoop, tickRate);
 }
 
@@ -715,7 +831,8 @@ BGImage.onload = function () {
 // Handle keyboard input
 document.addEventListener('keydown', (event) => {
     keys[event.key] = true;
-    elements[player.elementIndex].keyHandler(event.key);
+    // elements[player.elementIndex].keyHandler(event.key);
+    elements[player.elementIndex].keyChecker(event.key);
 
     switch (event.key) {
         case ' ':
@@ -744,6 +861,15 @@ document.addEventListener('keydown', (event) => {
 
 document.addEventListener('keyup', (event) => {
     keys[event.key] = false;
+    switch (player.elementIndex) {
+        case 0:
+            break;
+        case 1:
+            elements[player.elementIndex].abilities[1].checkDischarge(event.key);
+            break;
+        default:
+            break;
+    }
 });
 
 function startLevel(level) {
@@ -794,7 +920,7 @@ function startLevel(level) {
         platforms.push(new Platform(800, 670, 70, height, brown));
         // Elevator
         platforms.push(new Platform(1070, 670, 150, height, brown));
-        platforms.push(new Platform(250, 125, 20, height * 6, brown, true)); // tall wall
+        platforms.push(new Platform(250, 125, 300, height * 6, brown, true)); // tall wall
 
         for (let i = 90; i <= 90 * 4; i = i + 90) {
             platforms.push(new Platform(1100, 670 - i, 110, height, brown));
@@ -822,7 +948,9 @@ function startLevel(level) {
     }
     // Update target score to match the number of fires
     targetScore = fires.length; // Dynamically set targetScore here
-
+    setTimeout(() => {
+        player.deaths = 0;
+    }, 200); // Delay for 1 second before setting player deaths to avoid issues where player would hit bottom random number of times
     // Start the game loop
     gameLoop();
 }
