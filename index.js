@@ -6,6 +6,7 @@ const waterProjectiles = [];
 const gravity = 0.4; // Gravity force
 const platforms = []; // Array to hold platforms
 const fires = []; //array to hold fires
+var enemies = []; //array to hold enemies
 var offset = 0; //tracks objects offset
 const lightningSpriteImg = new Image();
 lightningSpriteImg.src = 'lightning-removebg-preview.png'; // Path to your lightning image
@@ -163,14 +164,13 @@ class Player extends VisibleObject {
         }
     }
 }
-
 const player = new Player(); // Create a new player instance
 class Ability {
     constructor(player) {
         this.player = player;
         this.ready = true;
     }
-    tick(){}
+    tick() { }
 }
 class CooldownAbility extends Ability {
     constructor(player, cooldownTime) {
@@ -186,7 +186,7 @@ class CooldownAbility extends Ability {
     }
     cooldownTimerStart() {
         this.cooldownTimeRemaining = this.cooldownTime;
-
+        this.ready = false; // Set ready to false when the ability is activated
         // Clear any existing interval to prevent multiple intervals
         if (this.cooldownInterval) {
             clearInterval(this.cooldownInterval);
@@ -244,6 +244,7 @@ class DurationAbility extends CooldownAbility {
     }
     abilityDeactivation() { }
 }
+
 class WaterAbility extends Ability {
     constructor(player) {
         super(player);
@@ -254,8 +255,8 @@ class WaterAbility extends Ability {
     }
 }
 class LightningAbility extends CooldownAbility {
-    constructor(player) {
-        super(player);
+    constructor(player, cooldownTime) {
+        super(player, cooldownTime);
     }
     abilityActivation(blinkDirection, blinkDistance) {
         let newX = this.player.x;
@@ -288,32 +289,77 @@ class LightningAbility extends CooldownAbility {
         this.cooldownTimerStart();
     }
 }
-class WindAbility1 extends CooldownAbility {
-    constructor(player){
-        super(player, 1000); // 1-second cooldown
+class LightningSuperAbility extends CooldownAbility {
+    constructor(player, cooldown) {
+        super(player, cooldown); // 1-second cooldown
+        // this.chargingUp = false;
+        this.chargeCoefficient = 0;
+        this.chargeInterval = null;
+        this.maxCoefficient = 5;
     }
-    abilityActivation(){
+    beginCharging() {
+        // If an interval is running, return
+        if (this.chargeInterval != null) {
+            return;
+        }
+
+        // Start a new interval
+        this.chargeInterval = setInterval(() => {
+            if (this.chargeCoefficient < this.maxCoefficient) {
+                this.chargeCoefficient += 0.1; // Increment by 0.1 every second
+                // console.log("Charge Coefficient:", this.chargeCoefficient); // Debugging output
+            } else {
+                this.chargeCoefficient = this.maxCoefficient; // Cap at maxCoefficient
+                clearInterval(this.chargeInterval); // Stop the interval
+                this.chargeInterval = null; // Reset the interval ID
+            }
+        }, 100); // Run every 100ms (0.1 seconds)
+    }
+    checkDischarge(key) {
+        if (this.ready && key === "g") {
+            // this.abilityActivation(this.chargeCoefficient);
+            this.discharge();
+        }
+    }
+    discharge() {
+        this.chargingUp = false;
+        this.chargeCoefficient = 0;
+        clearInterval(this.chargeInterval); // Stop the interval
+        this.chargeInterval = null; // Reset the interval ID
+
+        this.cooldownTimerStart(); // Start cooldown after discharge
+
+    }
+    activateAbility() {
+
+    }
+}
+class WindAbility1 extends CooldownAbility {
+    constructor(player, cooldownTime) {
+        super(player, cooldownTime); // 1-second cooldown
+    }
+    abilityActivation() {
         this.player.velocityY = -10;
         this.cooldownTimerStart();
     }
 
 }
 class WindAbility2 extends DurationAbility {
-    constructor(player){
-        super(player, 5000, 3000); // 5-second duration, 3-second cooldown
+    constructor(player, duration, cooldown) {
+        super(player, duration, cooldown); // 5-second duration, 3-second cooldown
     }
-    abilityActivation(){
+    abilityActivation() {
         this.player.speed = 10;
         this.durationTimerStart();
     }
-    abilityDeactivation(){
+    abilityDeactivation() {
         this.player.speed = 5;
         this.cooldownTimerStart(); // Start cooldown after deactivation
     }
 }
 class GhostAbility extends DurationAbility {
-    constructor(player,duration, cooldownTime) {
-        super(player,duration, cooldownTime); // 10-second cooldown, 2-second duration
+    constructor(player, duration, cooldownTime) {
+        super(player, duration, cooldownTime); // 10-second cooldown, 2-second duration
     }
     abilityActivation() {
         this.player.phaseable = true;
@@ -357,9 +403,9 @@ class WaterElement extends Element {
 class WindElement extends Element {
     constructor(player) {
         super(player);
-        this.abilities = [new WindAbility1(player),new WindAbility2(player)]; // 1-second cooldown
+        this.abilities = [new WindAbility1(player, 1000), new WindAbility2(player, 5000, 3000)]; // 1-second cooldown
     }
-    
+
     keyChecker(key) {
         if (this.abilities[0].ready && key === "ArrowUp" && !player.onGround) {
             this.abilities[0].abilityActivation();
@@ -375,21 +421,25 @@ class LightningElement extends Element {
     constructor(player) {
         super(player);
         this.blinkDistance = 150; // Blink distance in pixels
-        this.abilities = [new LightningAbility(player, 1000)]; // 1-second cooldown
+        this.abilities = [new LightningAbility(player, 1000), new LightningSuperAbility(player, 10000)]; // 1-second cooldown
     }
     keyChecker(key) {
         if (this.abilities[0].ready) {
             if (key === 'ArrowRight') {
-                this.abilities[0].abilityActivation(1,this.blinkDistance);
+                this.abilities[0].abilityActivation(1, this.blinkDistance);
             }
             if (key === 'ArrowLeft') {
                 this.abilities[0].abilityActivation(-1, this.blinkDistance);
             }
         }
+
+        if (this.abilities[1].ready && key === "g") {
+            this.abilities[1].beginCharging();
+        }
     }
 }
 class GhostElement extends Element {
-    constructor(player, ) {
+    constructor(player,) {
         super(player);
         this.abilities = [new GhostAbility(player, 10000, 2000)]; // 1-second cooldown
     }
@@ -721,26 +771,26 @@ function gameLoop() {
     //     }
     // }
     abilityCount = 0;
-    for (var ability of elements[player.elementIndex].abilities){
+    for (var ability of elements[player.elementIndex].abilities) {
         if (ability instanceof CooldownAbility) {
             if (ability.cooldownTimeRemaining <= 0) {
                 ctx.fillStyle = 'green';
-                ctx.fillText("Ability " + (abilityCount+1) +" Status: Ready", canvas.width - 300, 40+(abilityCount*20));
+                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Ready", canvas.width - 300, 40 + (abilityCount * 20));
             }
             else {
                 ctx.fillStyle = 'red';
-                ctx.fillText("Ability " + (abilityCount+1) +" Status: Recharging - " + ability.cooldownTimeRemaining / 1000, canvas.width - 300, 40+(abilityCount*20));
+                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Recharging - " + ability.cooldownTimeRemaining / 1000, canvas.width - 300, 40 + (abilityCount * 20));
             }
-            
+
         }
         if (ability instanceof DurationAbility) {
             if (ability.active) {
                 ctx.fillStyle = 'green';
-                ctx.fillText("Ability " + (abilityCount+1) +" Status: Active - " + ability.durationRemaining / 1000, canvas.width - 300, 60+ (abilityCount*20));
+                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Active - " + ability.durationRemaining / 1000, canvas.width - 300, 60 + (abilityCount * 20));
             }
             else {
                 ctx.fillStyle = 'red';
-                ctx.fillText("Ability " + (abilityCount+1) +" Status: Inactive", canvas.width - 300, 40+ (abilityCount*20 +20));
+                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Inactive", canvas.width - 300, 40 + (abilityCount * 20 + 20));
             }
         }
         abilityCount += 1;
@@ -811,6 +861,15 @@ document.addEventListener('keydown', (event) => {
 
 document.addEventListener('keyup', (event) => {
     keys[event.key] = false;
+    switch (player.elementIndex) {
+        case 0:
+            break;
+        case 1:
+            elements[player.elementIndex].abilities[1].checkDischarge(event.key);
+            break;
+        default:
+            break;
+    }
 });
 
 function startLevel(level) {
@@ -890,8 +949,8 @@ function startLevel(level) {
     // Update target score to match the number of fires
     targetScore = fires.length; // Dynamically set targetScore here
     setTimeout(() => {
-        player.deaths=0;
-    }, 100); // Delay for 1 second before showing the game canvas
+        player.deaths = 0;
+    }, 200); // Delay for 1 second before setting player deaths to avoid issues where player would hit bottom random number of times
     // Start the game loop
     gameLoop();
 }
