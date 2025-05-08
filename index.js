@@ -457,7 +457,7 @@ const lightningElement = new LightningElement(player); // 1-second cooldown, 150
 const waterElement = new WaterElement(player);
 const windElement = new WindElement(player); // 1-second cooldown
 const ghostElement = new GhostElement(player); // 2-second duration, 1 second cooldown
-const elements = [waterElement, lightningElement, windElement, ghostElement];
+var elements = []
 
 var targetScore = 0; // Set the target score to 0 initially
 
@@ -883,9 +883,12 @@ function startLevel(level) {
     // Clear existing platforms and fires
     platforms.length = 0;
     fires.length = 0;
+    // elements = [waterElement, lightningElement, windElement, ghostElement];
 
     // Load level-specific platforms and fires
     if (level === 1) {
+        elements = [waterElement]
+        platforms.push(new Platform (400, 300, height, 200,brown, true))
         platforms.push(new Platform(50, 200, 200, height, brown));
         platforms.push(new Platform(250, 400, 75, height, brown));
         platforms.push(new Platform(225, 125, 200, 75, brown));
