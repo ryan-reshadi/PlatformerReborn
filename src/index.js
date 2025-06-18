@@ -1,4 +1,5 @@
 const canvas = document.getElementById('myCanvas');
+
 const ctx = canvas.getContext('2d');
 const keys = {};
 const objects = [];
@@ -47,9 +48,22 @@ class VisibleObject {
         this.x += dx;
     }
 }
+class BackGround extends VisibleObject {
+    constructor(src){
+        super(0,0);
+        this.image = new Image();
+        this.image.src = src;
+    }
+    draw() {
+        ctx.drawImage(this.image, this.x, this.y, canvas.width, canvas.height);
+        // ctx.drawImage(this.image, this.x, this.y, this.image.width, canvas.height);
+    }
+}
+var background = new BackGround('forest.webp'); // Create a new background instance
 class Player extends VisibleObject {
-    constructor() {
-        super(40, 20); // Call the parent constructor with initial position and size
+    constructor(startingPosition) {
+        super(startingPosition.x, startingPosition.y); // Call the parent constructor with initial position and size
+        this.startingPosition = startingPosition; // Starting position of the player
         // this.x = 40;
         // this.y = 20;
         this.size = 20;
@@ -63,13 +77,20 @@ class Player extends VisibleObject {
         this.elementIndex = 0;
         this.phaseable = false;
     }
+    setStartingPosition(startingPosition, sendPlayer = false) {
+        this.startingPosition = startingPosition;
+        if (sendPlayer) {
+            this.x = startingPosition.x;
+            this.y = startingPosition.y;
+        }
+    }
     die() {
         for (var i of objects) {
             i.x += offset;
         }
         offset = 0;
-        this.x = 40;
-        this.y = 20;
+        this.x = this.startingPosition.x;
+        this.y = this.startingPosition.y;
         this.velocityY = 0;
         this.deaths = this.deaths + 1;
     }
@@ -164,7 +185,7 @@ class Player extends VisibleObject {
         }
     }
 }
-const player = new Player(); // Create a new player instance
+var player = new Player({ x: 0, y: 0 }); // Create a new player instance
 class Ability {
     constructor(player) {
         this.player = player;
@@ -245,6 +266,36 @@ class DurationAbility extends CooldownAbility {
     abilityDeactivation() { }
 }
 
+class ChargeUpAbility extends CooldownAbility {
+    constructor(player, cooldownTime) {
+        super(player, cooldownTime);
+        this.chargingUp = false;
+        this.chargeLevel = 0;
+        this.chargeInterval = null;
+        this.maxCharge = 5;
+    }
+    beginCharging() {
+        // If an interval is running, return
+        if (this.chargeInterval != null) {
+            return;
+        }
+        this.chargingUp = true; // Set chargingUp to true
+        // Start a new interval
+        this.chargeInterval = setInterval(() => {
+            if (this.chargeLevel < this.maxCharge) {
+                this.chargeLevel += 0.1; // Increment by 0.1 every second
+                // console.log("Charge Coefficient:", this.chargeCoefficient); // Debugging output
+            } else {
+                this.chargeLevel = this.maxCharge; // Cap at maxCoefficient
+                clearInterval(this.chargeInterval); // Stop the interval
+                this.chargeInterval = null; // Reset the interval ID
+            }
+        }, 100); // Run every 100ms (0.1 seconds)
+    }
+    checkDischarge(key) {
+    }
+    discharge(){}
+}
 class WaterAbility extends Ability {
     constructor(player) {
         super(player);
@@ -289,48 +340,26 @@ class LightningAbility extends CooldownAbility {
         this.cooldownTimerStart();
     }
 }
-class LightningSuperAbility extends CooldownAbility {
+class LightningSuperAbility extends ChargeUpAbility {
     constructor(player, cooldown) {
         super(player, cooldown); // 1-second cooldown
-        // this.chargingUp = false;
-        this.chargeCoefficient = 0;
-        this.chargeInterval = null;
-        this.maxCoefficient = 5;
-    }
-    beginCharging() {
-        // If an interval is running, return
-        if (this.chargeInterval != null) {
-            return;
-        }
-
-        // Start a new interval
-        this.chargeInterval = setInterval(() => {
-            if (this.chargeCoefficient < this.maxCoefficient) {
-                this.chargeCoefficient += 0.1; // Increment by 0.1 every second
-                // console.log("Charge Coefficient:", this.chargeCoefficient); // Debugging output
-            } else {
-                this.chargeCoefficient = this.maxCoefficient; // Cap at maxCoefficient
-                clearInterval(this.chargeInterval); // Stop the interval
-                this.chargeInterval = null; // Reset the interval ID
-            }
-        }, 100); // Run every 100ms (0.1 seconds)
     }
     checkDischarge(key) {
-        if (this.ready && key === "g") {
-            // this.abilityActivation(this.chargeCoefficient);
+        if (this.ready && key === "r") {
+            this.abilityActivation();
             this.discharge();
         }
     }
     discharge() {
         this.chargingUp = false;
-        this.chargeCoefficient = 0;
+        this.chargeLevel = 0;
         clearInterval(this.chargeInterval); // Stop the interval
         this.chargeInterval = null; // Reset the interval ID
 
         this.cooldownTimerStart(); // Start cooldown after discharge
 
     }
-    activateAbility() {
+    abilityActivation() {
 
     }
 }
@@ -433,7 +462,7 @@ class LightningElement extends Element {
             }
         }
 
-        if (this.abilities[1].ready && key === "g") {
+        if (this.abilities[1].ready && key === "r") {
             this.abilities[1].beginCharging();
         }
     }
@@ -619,7 +648,7 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw background
-    ctx.drawImage(BGImage, 0, 0, 1400, 850);
+    background.draw();
 
 
     // Handle player movement
@@ -793,6 +822,14 @@ function gameLoop() {
                 ctx.fillText("Ability " + (abilityCount + 1) + " Status: Inactive", canvas.width - 300, 40 + (abilityCount * 20 + 20));
             }
         }
+        if (ability instanceof ChargeUpAbility) {
+            if (ability.chargingUp) {
+                ctx.fillStyle = 'yellow';
+                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Charging - " + Math.round(ability.chargeLevel*100/ability.maxCharge) +"%", canvas.width - 300, 60 + (abilityCount * 20));
+            }}
+            else{
+
+            }
         abilityCount += 1;
     }
 
@@ -861,6 +898,9 @@ document.addEventListener('keydown', (event) => {
 
 document.addEventListener('keyup', (event) => {
     keys[event.key] = false;
+    if (elements[player.elementIndex].abilities[1] instanceof ChargeUpAbility){
+        elements[player.elementIndex].abilities[1].checkDischarge(event.key);
+    }
     switch (player.elementIndex) {
         case 0:
             break;
@@ -886,17 +926,22 @@ function startLevel(level) {
 
     // Load level-specific platforms and fires
     if (level === 1) {
+        player.setStartingPosition({ x: 50, y: 20 }, true); // Reset player starting position
         platforms.push(new Platform(50, 200, 200, height, brown));
         platforms.push(new Platform(250, 400, 75, height, brown));
         platforms.push(new Platform(225, 125, 200, 75, brown));
         platforms.push(new MovingPlatform(400, 500, 100, height, red, 3, 3, 400, 500, 600, 700)); // Moving platform
         fires.push(new Fire(100, 150));
         fires.push(new Fire(200, 300));
+        background = new BackGround('forest.webp'); // Create a new background instance
     } else if (level === 2) {
+        player.setStartingPosition({ x: 50, y: 20 }, true); // Reset player starting position
         fires.push(new Fire(100, 150));
         platforms.push(new Platform(50, 400, 200, height, brown));
         platforms.push(new Platform(250, 200, 75, height, brown));
+        background = new BackGround('forest.webp'); // Create a new background instance
     } else if (level === 3) {
+        player.setStartingPosition({ x: 50, y: 20 }, true); // Reset player starting position
         platforms.push(new Platform(50, 600, 300, height, brown));
         platforms.push(new Platform(400, 500, 150, height, brown));
         platforms.push(new Platform(700, 300, 100, height, brown));
@@ -904,8 +949,11 @@ function startLevel(level) {
         fires.push(new Fire(450, 450));
         fires.push(new Fire(750, 250));
         fires.push(new Fire(800, 200));
+        background = new BackGround('forest.webp'); // Create a new background instance
     }
     else if (level === 4) {
+        player.setStartingPosition({ x: 50, y: 20 }, true); // Reset player starting position
+        // platforms.push(new Platform(0,0, 1400, 700, brown));
         platforms.push(new Platform(50, 200, 200, height, brown));
         platforms.push(new Platform(250, 400, 75, height, brown));
         platforms.push(new Platform(450, 400, 75, height, brown));
@@ -939,6 +987,7 @@ function startLevel(level) {
         fires.push(new Fire(1000, 475));
         fires.push(new Fire(500, 550));
         fires.push(new Fire(600, 600));
+        background = new BackGround('forest.webp'); // Create a new background instance
     }
     for (i of fires) {
         objects.push(i);
