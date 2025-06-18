@@ -38,7 +38,7 @@ const instructionAlert = function () {
     )
 }
 
-class VisibleObject {
+export class VisibleObject {
     constructor(x, y) {
         this.x = x;
         this.y = y;
@@ -48,7 +48,7 @@ class VisibleObject {
         this.x += dx;
     }
 }
-class BackGround extends VisibleObject {
+export class BackGround extends VisibleObject {
     constructor(src){
         super(0,0);
         this.image = new Image();
@@ -60,7 +60,7 @@ class BackGround extends VisibleObject {
     }
 }
 var background = new BackGround('forest.webp'); // Create a new background instance
-class Player extends VisibleObject {
+export class Player extends VisibleObject {
     constructor(startingPosition) {
         super(startingPosition.x, startingPosition.y); // Call the parent constructor with initial position and size
         this.startingPosition = startingPosition; // Starting position of the player
@@ -185,15 +185,14 @@ class Player extends VisibleObject {
         }
     }
 }
-var player = new Player({ x: 0, y: 0 }); // Create a new player instance
-class Ability {
+export class Ability {
     constructor(player) {
         this.player = player;
         this.ready = true;
     }
     tick() { }
 }
-class CooldownAbility extends Ability {
+export class CooldownAbility extends Ability {
     constructor(player, cooldownTime) {
         super(player);
         this.cooldownTime = cooldownTime;
@@ -224,7 +223,7 @@ class CooldownAbility extends Ability {
         }, 100); // Run every 100ms
     }
 }
-class DurationAbility extends CooldownAbility {
+export class DurationAbility extends CooldownAbility {
     constructor(player, duration, cooldownTime) {
         super(player);
         this.cooldownTime = cooldownTime;
@@ -266,7 +265,7 @@ class DurationAbility extends CooldownAbility {
     abilityDeactivation() { }
 }
 
-class ChargeUpAbility extends CooldownAbility {
+export class ChargeUpAbility extends CooldownAbility {
     constructor(player, cooldownTime) {
         super(player, cooldownTime);
         this.chargingUp = false;
@@ -296,7 +295,7 @@ class ChargeUpAbility extends CooldownAbility {
     }
     discharge(){}
 }
-class WaterAbility extends Ability {
+export class WaterAbility extends Ability {
     constructor(player) {
         super(player);
     }
@@ -305,7 +304,7 @@ class WaterAbility extends Ability {
         waterProjectiles.push(water);
     }
 }
-class LightningAbility extends CooldownAbility {
+export class LightningAbility extends CooldownAbility {
     constructor(player, cooldownTime) {
         super(player, cooldownTime);
     }
@@ -340,7 +339,7 @@ class LightningAbility extends CooldownAbility {
         this.cooldownTimerStart();
     }
 }
-class LightningSuperAbility extends ChargeUpAbility {
+export class LightningSuperAbility extends ChargeUpAbility {
     constructor(player, cooldown) {
         super(player, cooldown); // 1-second cooldown
     }
@@ -363,7 +362,7 @@ class LightningSuperAbility extends ChargeUpAbility {
 
     }
 }
-class WindAbility1 extends CooldownAbility {
+export class WindAbility1 extends CooldownAbility {
     constructor(player, cooldownTime) {
         super(player, cooldownTime); // 1-second cooldown
     }
@@ -373,7 +372,7 @@ class WindAbility1 extends CooldownAbility {
     }
 
 }
-class WindAbility2 extends DurationAbility {
+export class WindAbility2 extends DurationAbility {
     constructor(player, duration, cooldown) {
         super(player, duration, cooldown); // 5-second duration, 3-second cooldown
     }
@@ -386,7 +385,7 @@ class WindAbility2 extends DurationAbility {
         this.cooldownTimerStart(); // Start cooldown after deactivation
     }
 }
-class GhostAbility extends DurationAbility {
+export class GhostAbility extends DurationAbility {
     constructor(player, duration, cooldownTime) {
         super(player, duration, cooldownTime); // 10-second cooldown, 2-second duration
     }
@@ -398,7 +397,7 @@ class GhostAbility extends DurationAbility {
         this.player.phaseable = false;
     }
 }
-class Element {
+export class Element {
     constructor(player) {
         this.player = player;
         this.abilities = [];
@@ -407,7 +406,7 @@ class Element {
 
     }
 }
-class WaterElement extends Element {
+export class WaterElement extends Element {
     constructor(player) {
         super(player);
         this.abilities = [new WaterAbility(player)];
@@ -429,7 +428,7 @@ class WaterElement extends Element {
     }
 }
 
-class WindElement extends Element {
+export class WindElement extends Element {
     constructor(player) {
         super(player);
         this.abilities = [new WindAbility1(player, 1000), new WindAbility2(player, 5000, 3000)]; // 1-second cooldown
@@ -446,7 +445,7 @@ class WindElement extends Element {
         }
     }
 }
-class LightningElement extends Element {
+export class LightningElement extends Element {
     constructor(player) {
         super(player);
         this.blinkDistance = 150; // Blink distance in pixels
@@ -467,7 +466,7 @@ class LightningElement extends Element {
         }
     }
 }
-class GhostElement extends Element {
+export class GhostElement extends Element {
     constructor(player,) {
         super(player);
         this.abilities = [new GhostAbility(player, 10000, 2000)]; // 1-second cooldown
@@ -478,7 +477,7 @@ class GhostElement extends Element {
         }
     }
 }
-class FireElement extends Element { }
+export class FireElement extends Element { }
 
 
 
@@ -499,7 +498,7 @@ function jumpSound() {
     // audio.play().catch(error => console.error("Playback error:", error));
 }
 
-class Water extends VisibleObject {
+export class Water extends VisibleObject {
     constructor(x, y, direction) {
         super(x, y); // Call the parent constructor with initial position and size
         // this.x = x;
@@ -545,7 +544,7 @@ class Water extends VisibleObject {
 
 }
 
-class Fire extends VisibleObject {
+export class Fire extends VisibleObject {
     constructor(x, y) {
         super(x, y); // Call the parent constructor with initial position and size
         // this.x = x;
@@ -587,7 +586,7 @@ class Fire extends VisibleObject {
     }
 }
 
-class Platform extends VisibleObject {
+export class Platform extends VisibleObject {
     constructor(x, y, width, length, color, phaseable = false) {
         super(x, y);
         this.x = x;
@@ -609,7 +608,7 @@ class Platform extends VisibleObject {
 
 }
 
-class MovingPlatform extends Platform {
+export class MovingPlatform extends Platform {
     constructor(x, y, width, length, color, Xspeed, Yspeed, XLowerBound, YLowerBound, XUpperBound, YUpperBound) {
         super(x, y, width, length, color);
         this.Xspeed = Xspeed;
