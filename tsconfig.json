@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "module": "commonjs",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     // "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "outDir": "dist"
   }
 }

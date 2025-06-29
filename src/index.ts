@@ -961,8 +961,8 @@ export function startLevel(level) {
     currentLevel = level;
 
     // Hide the title screen and show the game canvas
-    document.getElementById('titleScreen').style.display = 'none';
-    canvas.style.display = 'block';
+    // document.getElementById('titleScreen').style.display = 'none';
+    // canvas.style.display = 'block';
 
     // Clear existing platforms and fires
     platforms.length = 0;

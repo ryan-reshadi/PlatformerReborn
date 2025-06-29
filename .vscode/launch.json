@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Open index.html",
             // "file": "C:\Users\ryanr\OneDrive\Projects\PlatformerReborn\index.html"
-            "file": "${workspaceFolder}/index.html",
+            "file": "${workspaceFolder}/src/index.html",
         }
     ]
 }

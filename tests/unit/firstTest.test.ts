@@ -20,5 +20,6 @@ test ('Correct starting position', () => {
         code.startLevel(i);
         expect(code.platforms.length).toBeGreaterThan(0);
         expect(code.fires.length).toBeGreaterThan(0);
+        
     }
 });
