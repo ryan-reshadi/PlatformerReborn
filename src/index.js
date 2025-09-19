@@ -185,18 +185,62 @@ export class Player extends VisibleObject {
         }
     }
 }
+<<<<<<< HEAD:src/index.js
 export class Ability {
     constructor(player) {
         this.player = player;
         this.ready = true;
+=======
+
+const player = new Player(); // Create a new player instance
+
+class Element {
+    constructor(player) { this.player = player; }
+    tick() {
+    }
+    // keyHandler(key){
+    //     this.keyChecker(key);
+    // }
+    keyChecker(key) {
+
+>>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
     }
     tick() { }
 }
+<<<<<<< HEAD:src/index.js
 export class CooldownAbility extends Ability {
+=======
+class WaterElement extends Element {
+    constructor(player) {
+        super(player);
+    }
+    abilityActivation(direction) {
+        const water = new Water(this.player.x, this.player.y, direction);
+        waterProjectiles.push(water);
+    }
+    keyChecker(key) {
+        if (key === 'ArrowRight') {
+            this.abilityActivation("right");
+        }
+        if (key === 'ArrowLeft') {
+            this.abilityActivation("left");
+        }
+        if (key === 'ArrowUp') {
+            // player.direction = "up";
+            this.abilityActivation("up");
+        }
+        if (key === "ArrowDown") {
+            this.abilityActivation("down");
+        }
+    }
+}
+class CooldownElement extends Element {
+>>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
     constructor(player, cooldownTime) {
         super(player);
         this.cooldownTime = cooldownTime;
         this.cooldownTimeRemaining = 0;
+        this.ready = true;
         this.cooldownInterval = null; // Initialize cooldown interval ID
     }
     tick() {
@@ -204,6 +248,12 @@ export class CooldownAbility extends Ability {
             this.ready = true;
         }
     }
+    // keyHandler(key) {
+    //     if (this.ready) {
+    //         this.keyChecker(key);
+    //     }
+    //     // this.ready must be set to false in the keyChecker method
+    // }
     cooldownTimerStart() {
         this.cooldownTimeRemaining = this.cooldownTime;
         this.ready = false; // Set ready to false when the ability is activated
@@ -223,11 +273,32 @@ export class CooldownAbility extends Ability {
         }, 100); // Run every 100ms
     }
 }
+<<<<<<< HEAD:src/index.js
 export class DurationAbility extends CooldownAbility {
     constructor(player, duration, cooldownTime) {
         super(player);
         this.cooldownTime = cooldownTime;
         this.cooldownTimeRemaining = 0;
+=======
+class WindElement extends CooldownElement {
+    constructor(player, cooldownTime) {
+        super(player, cooldownTime);
+    }
+    abilityActivation() {
+        player.velocityY = -10; // Jump
+        this.cooldownTimerStart(); // Start cooldown after ability activation
+    }
+    keyChecker(key) {
+        if (this.ready && key === "ArrowUp" && !player.onGround) {
+            this.abilityActivation();
+            this.ready=false;
+        }
+    }
+}
+class DurationElement extends CooldownElement {
+    constructor(player, cooldownTime, duration) {
+        super(player, cooldownTime);
+>>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
         this.duration = duration;
         this.durationRemaining = 0;
         this.active = false;
@@ -264,6 +335,7 @@ export class DurationAbility extends CooldownAbility {
     }
     abilityDeactivation() { }
 }
+<<<<<<< HEAD:src/index.js
 
 export class ChargeUpAbility extends CooldownAbility {
     constructor(player, cooldownTime) {
@@ -309,11 +381,19 @@ export class LightningAbility extends CooldownAbility {
         super(player, cooldownTime);
     }
     abilityActivation(blinkDirection, blinkDistance) {
+=======
+class LightningElement extends CooldownElement {
+    constructor(player, cooldownTime, blinkDistance) {
+        super(player, cooldownTime);
+        this.blinkDistance = blinkDistance;
+    }
+    abilityActivation(blinkDirection) {
+>>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
         let newX = this.player.x;
         let newY = this.player.y;
         const step = 10;
         let currentX = this.player.x;
-        for (let i = 0; i <= blinkDistance; i += step) {
+        for (let i = 0; i <= this.blinkDistance; i += step) {
             const testX = this.player.x + (blinkDirection * i);
             const isColliding = platforms.some(platform => {
                 const isAbovePlatform = newY + this.player.size <= platform.y;
@@ -334,6 +414,7 @@ export class LightningAbility extends CooldownAbility {
         // Ensure the image is drawn after it loads
 
         ctx.drawImage(lightningSpriteImg, currentX + this.player.size, spriteY, spriteWidth, spriteHeight);
+<<<<<<< HEAD:src/index.js
         this.player.x = newX;
         this.player.y = newY;
         this.cooldownTimerStart();
@@ -388,6 +469,25 @@ export class WindAbility2 extends DurationAbility {
 export class GhostAbility extends DurationAbility {
     constructor(player, duration, cooldownTime) {
         super(player, duration, cooldownTime); // 10-second cooldown, 2-second duration
+=======
+        player.x = newX;
+        player.y = newY;
+        this.cooldownTimerStart(); // Start cooldown after ability activation
+    }
+    keyChecker(key) {
+        if (this.ready){
+        if (key === 'ArrowRight') {
+            this.abilityActivation(1);
+        }
+        if (key === 'ArrowLeft') {
+            this.abilityActivation(-1);
+        }}
+    }
+}
+class GhostElement extends DurationElement {
+    constructor(player, cooldownTime, duration) {
+        super(player, cooldownTime, duration);
+>>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
     }
     abilityActivation() {
         this.player.phaseable = true;
@@ -396,6 +496,7 @@ export class GhostAbility extends DurationAbility {
     abilityDeactivation() {
         this.player.phaseable = false;
     }
+<<<<<<< HEAD:src/index.js
 }
 export class Element {
     constructor(player) {
@@ -482,6 +583,27 @@ export class FireElement extends Element { }
 
 
 const lightningElement = new LightningElement(player); // 1-second cooldown, 150 px blink distance
+=======
+    keyChecker(key) {
+        if (this.ready && key === "ArrowUp") {
+            this.abilityActivation();
+        }
+    }
+}
+class FireElement extends Element {}
+// class LightningElement extends Element {
+//     constructor(abilityFunction={},cooldown = 0){
+//         super(abilityFunction,cooldown);
+//     }
+
+// }
+// class WaterElement extends Element {
+//     constructor(abilityFunction={},cooldown = 0){
+//         super(abilityFunction,cooldown);
+//     }
+// }
+const lightningElement = new LightningElement(player, 1000, 150); // 1-second cooldown, 150 px blink distance
+>>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
 const waterElement = new WaterElement(player);
 const windElement = new WindElement(player); // 1-second cooldown
 const ghostElement = new GhostElement(player); // 2-second duration, 1 second cooldown
@@ -811,6 +933,7 @@ function gameLoop() {
             }
 
         }
+<<<<<<< HEAD:src/index.js
         if (ability instanceof DurationAbility) {
             if (ability.active) {
                 ctx.fillStyle = 'green';
@@ -820,6 +943,21 @@ function gameLoop() {
                 ctx.fillStyle = 'red';
                 ctx.fillText("Ability " + (abilityCount + 1) + " Status: Inactive", canvas.width - 300, 40 + (abilityCount * 20 + 20));
             }
+=======
+        else {
+            ctx.fillStyle = 'red';
+            ctx.fillText("Status: Recharging - " + elements[player.elementIndex].cooldownTimeRemaining/1000, canvas.width - 250, 40);
+        }
+    }
+    if (elements[player.elementIndex] instanceof DurationElement) {
+        if (elements[player.elementIndex].active) {
+            ctx.fillStyle = 'green';
+            ctx.fillText("Status: Active - " + elements[player.elementIndex].durationRemaining/1000, canvas.width - 250, 60);
+        }
+        else {
+            ctx.fillStyle = 'red';
+            ctx.fillText("Status: Inactive", canvas.width - 250, 60);
+>>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
         }
         if (ability instanceof ChargeUpAbility) {
             if (ability.chargingUp) {
@@ -846,10 +984,15 @@ function gameLoop() {
         ctx.fillText("Because gradual global warming and climate change is the primary cause of the increase in natural wildfires as of late, that should be our main priority.", canvas.width / 2 - 650, canvas.height / 2 + 210);
         ctx.fillText("Combatting global warming will not be easy, but we must work together to prevent this impending doom that is knocking on our door.", canvas.width / 2 - 600, canvas.height / 2 + 240);
     }
+<<<<<<< HEAD:src/index.js
     for (var element of elements) {
         for (var ability of element.abilities) {
             ability.tick();
         }
+=======
+    for (element of elements) {
+    element.tick(); // Call tick method for the current element
+>>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
     }
 }
 
