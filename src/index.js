@@ -24,7 +24,7 @@ const deleteFromArray = function (target, array) {
     }
     return returnArray;
 } // Function to delete an element from an array, used for waterBall elements
-const instructionAlert = function () {
+function instructionAlert() {
     alert(
         'Instructions: \n' +
         'Use A to move left, D to move right, W to jump. \n' +
@@ -38,7 +38,7 @@ const instructionAlert = function () {
     )
 }
 
-export class VisibleObject {
+class VisibleObject {
     constructor(x, y) {
         this.x = x;
         this.y = y;
@@ -48,7 +48,7 @@ export class VisibleObject {
         this.x += dx;
     }
 }
-export class BackGround extends VisibleObject {
+class BackGround extends VisibleObject {
     constructor(src){
         super(0,0);
         this.image = new Image();
@@ -60,7 +60,7 @@ export class BackGround extends VisibleObject {
     }
 }
 var background = new BackGround('forest.webp'); // Create a new background instance
-export class Player extends VisibleObject {
+class Player extends VisibleObject {
     constructor(startingPosition) {
         super(startingPosition.x, startingPosition.y); // Call the parent constructor with initial position and size
         this.startingPosition = startingPosition; // Starting position of the player
@@ -185,57 +185,16 @@ export class Player extends VisibleObject {
         }
     }
 }
-<<<<<<< HEAD:src/index.js
-export class Ability {
+const player = new Player({ x: 50, y: 20 });
+
+class Ability {
     constructor(player) {
         this.player = player;
         this.ready = true;
-=======
-
-const player = new Player(); // Create a new player instance
-
-class Element {
-    constructor(player) { this.player = player; }
-    tick() {
-    }
-    // keyHandler(key){
-    //     this.keyChecker(key);
-    // }
-    keyChecker(key) {
-
->>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
     }
     tick() { }
 }
-<<<<<<< HEAD:src/index.js
-export class CooldownAbility extends Ability {
-=======
-class WaterElement extends Element {
-    constructor(player) {
-        super(player);
-    }
-    abilityActivation(direction) {
-        const water = new Water(this.player.x, this.player.y, direction);
-        waterProjectiles.push(water);
-    }
-    keyChecker(key) {
-        if (key === 'ArrowRight') {
-            this.abilityActivation("right");
-        }
-        if (key === 'ArrowLeft') {
-            this.abilityActivation("left");
-        }
-        if (key === 'ArrowUp') {
-            // player.direction = "up";
-            this.abilityActivation("up");
-        }
-        if (key === "ArrowDown") {
-            this.abilityActivation("down");
-        }
-    }
-}
-class CooldownElement extends Element {
->>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
+class CooldownAbility extends Ability {
     constructor(player, cooldownTime) {
         super(player);
         this.cooldownTime = cooldownTime;
@@ -273,32 +232,11 @@ class CooldownElement extends Element {
         }, 100); // Run every 100ms
     }
 }
-<<<<<<< HEAD:src/index.js
-export class DurationAbility extends CooldownAbility {
+class DurationAbility extends CooldownAbility {
     constructor(player, duration, cooldownTime) {
-        super(player);
+        super(player, cooldownTime);
         this.cooldownTime = cooldownTime;
         this.cooldownTimeRemaining = 0;
-=======
-class WindElement extends CooldownElement {
-    constructor(player, cooldownTime) {
-        super(player, cooldownTime);
-    }
-    abilityActivation() {
-        player.velocityY = -10; // Jump
-        this.cooldownTimerStart(); // Start cooldown after ability activation
-    }
-    keyChecker(key) {
-        if (this.ready && key === "ArrowUp" && !player.onGround) {
-            this.abilityActivation();
-            this.ready=false;
-        }
-    }
-}
-class DurationElement extends CooldownElement {
-    constructor(player, cooldownTime, duration) {
-        super(player, cooldownTime);
->>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
         this.duration = duration;
         this.durationRemaining = 0;
         this.active = false;
@@ -335,9 +273,7 @@ class DurationElement extends CooldownElement {
     }
     abilityDeactivation() { }
 }
-<<<<<<< HEAD:src/index.js
-
-export class ChargeUpAbility extends CooldownAbility {
+class ChargeUpAbility extends CooldownAbility {
     constructor(player, cooldownTime) {
         super(player, cooldownTime);
         this.chargingUp = false;
@@ -367,7 +303,7 @@ export class ChargeUpAbility extends CooldownAbility {
     }
     discharge(){}
 }
-export class WaterAbility extends Ability {
+class WaterAbility extends Ability {
     constructor(player) {
         super(player);
     }
@@ -376,24 +312,16 @@ export class WaterAbility extends Ability {
         waterProjectiles.push(water);
     }
 }
-export class LightningAbility extends CooldownAbility {
+class LightningAbility extends CooldownAbility {
     constructor(player, cooldownTime) {
         super(player, cooldownTime);
     }
     abilityActivation(blinkDirection, blinkDistance) {
-=======
-class LightningElement extends CooldownElement {
-    constructor(player, cooldownTime, blinkDistance) {
-        super(player, cooldownTime);
-        this.blinkDistance = blinkDistance;
-    }
-    abilityActivation(blinkDirection) {
->>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
         let newX = this.player.x;
         let newY = this.player.y;
         const step = 10;
         let currentX = this.player.x;
-        for (let i = 0; i <= this.blinkDistance; i += step) {
+        for (let i = 0; i <= blinkDistance; i += step) {
             const testX = this.player.x + (blinkDirection * i);
             const isColliding = platforms.some(platform => {
                 const isAbovePlatform = newY + this.player.size <= platform.y;
@@ -414,13 +342,12 @@ class LightningElement extends CooldownElement {
         // Ensure the image is drawn after it loads
 
         ctx.drawImage(lightningSpriteImg, currentX + this.player.size, spriteY, spriteWidth, spriteHeight);
-<<<<<<< HEAD:src/index.js
         this.player.x = newX;
         this.player.y = newY;
         this.cooldownTimerStart();
     }
 }
-export class LightningSuperAbility extends ChargeUpAbility {
+class LightningSuperAbility extends ChargeUpAbility {
     constructor(player, cooldown) {
         super(player, cooldown); // 1-second cooldown
     }
@@ -443,7 +370,7 @@ export class LightningSuperAbility extends ChargeUpAbility {
 
     }
 }
-export class WindAbility1 extends CooldownAbility {
+class WindAbility1 extends CooldownAbility {
     constructor(player, cooldownTime) {
         super(player, cooldownTime); // 1-second cooldown
     }
@@ -453,7 +380,7 @@ export class WindAbility1 extends CooldownAbility {
     }
 
 }
-export class WindAbility2 extends DurationAbility {
+class WindAbility2 extends DurationAbility {
     constructor(player, duration, cooldown) {
         super(player, duration, cooldown); // 5-second duration, 3-second cooldown
     }
@@ -466,28 +393,9 @@ export class WindAbility2 extends DurationAbility {
         this.cooldownTimerStart(); // Start cooldown after deactivation
     }
 }
-export class GhostAbility extends DurationAbility {
+class GhostAbility extends DurationAbility {
     constructor(player, duration, cooldownTime) {
         super(player, duration, cooldownTime); // 10-second cooldown, 2-second duration
-=======
-        player.x = newX;
-        player.y = newY;
-        this.cooldownTimerStart(); // Start cooldown after ability activation
-    }
-    keyChecker(key) {
-        if (this.ready){
-        if (key === 'ArrowRight') {
-            this.abilityActivation(1);
-        }
-        if (key === 'ArrowLeft') {
-            this.abilityActivation(-1);
-        }}
-    }
-}
-class GhostElement extends DurationElement {
-    constructor(player, cooldownTime, duration) {
-        super(player, cooldownTime, duration);
->>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
     }
     abilityActivation() {
         this.player.phaseable = true;
@@ -496,9 +404,8 @@ class GhostElement extends DurationElement {
     abilityDeactivation() {
         this.player.phaseable = false;
     }
-<<<<<<< HEAD:src/index.js
 }
-export class Element {
+class Element {
     constructor(player) {
         this.player = player;
         this.abilities = [];
@@ -507,7 +414,7 @@ export class Element {
 
     }
 }
-export class WaterElement extends Element {
+class WaterElement extends Element {
     constructor(player) {
         super(player);
         this.abilities = [new WaterAbility(player)];
@@ -529,7 +436,7 @@ export class WaterElement extends Element {
     }
 }
 
-export class WindElement extends Element {
+class WindElement extends Element {
     constructor(player) {
         super(player);
         this.abilities = [new WindAbility1(player, 1000), new WindAbility2(player, 5000, 3000)]; // 1-second cooldown
@@ -546,7 +453,7 @@ export class WindElement extends Element {
         }
     }
 }
-export class LightningElement extends Element {
+class LightningElement extends Element {
     constructor(player) {
         super(player);
         this.blinkDistance = 150; // Blink distance in pixels
@@ -567,7 +474,7 @@ export class LightningElement extends Element {
         }
     }
 }
-export class GhostElement extends Element {
+class GhostElement extends Element {
     constructor(player,) {
         super(player);
         this.abilities = [new GhostAbility(player, 10000, 2000)]; // 1-second cooldown
@@ -578,32 +485,11 @@ export class GhostElement extends Element {
         }
     }
 }
-export class FireElement extends Element { }
+class FireElement extends Element { }
 
 
 
 const lightningElement = new LightningElement(player); // 1-second cooldown, 150 px blink distance
-=======
-    keyChecker(key) {
-        if (this.ready && key === "ArrowUp") {
-            this.abilityActivation();
-        }
-    }
-}
-class FireElement extends Element {}
-// class LightningElement extends Element {
-//     constructor(abilityFunction={},cooldown = 0){
-//         super(abilityFunction,cooldown);
-//     }
-
-// }
-// class WaterElement extends Element {
-//     constructor(abilityFunction={},cooldown = 0){
-//         super(abilityFunction,cooldown);
-//     }
-// }
-const lightningElement = new LightningElement(player, 1000, 150); // 1-second cooldown, 150 px blink distance
->>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
 const waterElement = new WaterElement(player);
 const windElement = new WindElement(player); // 1-second cooldown
 const ghostElement = new GhostElement(player); // 2-second duration, 1 second cooldown
@@ -620,7 +506,7 @@ function jumpSound() {
     // audio.play().catch(error => console.error("Playback error:", error));
 }
 
-export class Water extends VisibleObject {
+class Water extends VisibleObject {
     constructor(x, y, direction) {
         super(x, y); // Call the parent constructor with initial position and size
         // this.x = x;
@@ -666,7 +552,7 @@ export class Water extends VisibleObject {
 
 }
 
-export class Fire extends VisibleObject {
+class Fire extends VisibleObject {
     constructor(x, y) {
         super(x, y); // Call the parent constructor with initial position and size
         // this.x = x;
@@ -708,7 +594,7 @@ export class Fire extends VisibleObject {
     }
 }
 
-export class Platform extends VisibleObject {
+class Platform extends VisibleObject {
     constructor(x, y, width, length, color, phaseable = false) {
         super(x, y);
         this.x = x;
@@ -730,7 +616,7 @@ export class Platform extends VisibleObject {
 
 }
 
-export class MovingPlatform extends Platform {
+class MovingPlatform extends Platform {
     constructor(x, y, width, length, color, Xspeed, Yspeed, XLowerBound, YLowerBound, XUpperBound, YUpperBound) {
         super(x, y, width, length, color);
         this.Xspeed = Xspeed;
@@ -920,53 +806,28 @@ function gameLoop() {
     //         ctx.fillText("Status: Inactive", canvas.width - 250, 60);
     //     }
     // }
-    abilityCount = 0;
-    for (var ability of elements[player.elementIndex].abilities) {
+    let abilityCount = 0;
+    for (const ability of elements[player.elementIndex].abilities) {
+        const statusY = 40 + abilityCount * 40;
         if (ability instanceof CooldownAbility) {
-            if (ability.cooldownTimeRemaining <= 0) {
-                ctx.fillStyle = 'green';
-                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Ready", canvas.width - 300, 40 + (abilityCount * 20));
-            }
-            else {
-                ctx.fillStyle = 'red';
-                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Recharging - " + ability.cooldownTimeRemaining / 1000, canvas.width - 300, 40 + (abilityCount * 20));
-            }
-
+            ctx.fillStyle = ability.ready ? 'green' : 'red';
+            const status = ability.ready
+                ? 'Ready'
+                : 'Recharging - ' + (ability.cooldownTimeRemaining / 1000).toFixed(1);
+            ctx.fillText("Ability " + (abilityCount + 1) + " Status: " + status, canvas.width - 300, statusY);
         }
-<<<<<<< HEAD:src/index.js
         if (ability instanceof DurationAbility) {
-            if (ability.active) {
-                ctx.fillStyle = 'green';
-                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Active - " + ability.durationRemaining / 1000, canvas.width - 300, 60 + (abilityCount * 20));
-            }
-            else {
-                ctx.fillStyle = 'red';
-                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Inactive", canvas.width - 300, 40 + (abilityCount * 20 + 20));
-            }
-=======
-        else {
-            ctx.fillStyle = 'red';
-            ctx.fillText("Status: Recharging - " + elements[player.elementIndex].cooldownTimeRemaining/1000, canvas.width - 250, 40);
+            ctx.fillStyle = ability.active ? 'green' : 'red';
+            const status = ability.active
+                ? 'Active - ' + (ability.durationRemaining / 1000).toFixed(1)
+                : 'Inactive';
+            ctx.fillText("Ability " + (abilityCount + 1) + " Status: " + status, canvas.width - 300, statusY + 20);
         }
-    }
-    if (elements[player.elementIndex] instanceof DurationElement) {
-        if (elements[player.elementIndex].active) {
-            ctx.fillStyle = 'green';
-            ctx.fillText("Status: Active - " + elements[player.elementIndex].durationRemaining/1000, canvas.width - 250, 60);
+        if (ability instanceof ChargeUpAbility && ability.chargingUp) {
+            ctx.fillStyle = 'yellow';
+            const charge = Math.round(ability.chargeLevel * 100 / ability.maxCharge);
+            ctx.fillText("Ability " + (abilityCount + 1) + " Status: Charging - " + charge + "%", canvas.width - 300, statusY + 20);
         }
-        else {
-            ctx.fillStyle = 'red';
-            ctx.fillText("Status: Inactive", canvas.width - 250, 60);
->>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
-        }
-        if (ability instanceof ChargeUpAbility) {
-            if (ability.chargingUp) {
-                ctx.fillStyle = 'yellow';
-                ctx.fillText("Ability " + (abilityCount + 1) + " Status: Charging - " + Math.round(ability.chargeLevel*100/ability.maxCharge) +"%", canvas.width - 300, 60 + (abilityCount * 20));
-            }}
-            else{
-
-            }
         abilityCount += 1;
     }
 
@@ -984,15 +845,10 @@ function gameLoop() {
         ctx.fillText("Because gradual global warming and climate change is the primary cause of the increase in natural wildfires as of late, that should be our main priority.", canvas.width / 2 - 650, canvas.height / 2 + 210);
         ctx.fillText("Combatting global warming will not be easy, but we must work together to prevent this impending doom that is knocking on our door.", canvas.width / 2 - 600, canvas.height / 2 + 240);
     }
-<<<<<<< HEAD:src/index.js
-    for (var element of elements) {
-        for (var ability of element.abilities) {
+    for (const element of elements) {
+        for (const ability of element.abilities) {
             ability.tick();
         }
-=======
-    for (element of elements) {
-    element.tick(); // Call tick method for the current element
->>>>>>> parent of d81fa86 (Split Elements into Element containers and Abilities.):index.js
     }
 }
 
